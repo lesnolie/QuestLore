@@ -50,9 +50,9 @@ end
 function Locale.Set(choice)
     if choice ~= "auto" and choice ~= "es" and choice ~= "en" then return end
     ns.db.language = choice
+    if ns.ready then ns.history:Relocalize() end
     if ns.Options then ns.Options:Sync() end
     if ns.ready then
-        ns.history:Relocalize()
         if ns.Window.Localize then ns.Window:Localize() end
         ns.QueueRefresh()
     end

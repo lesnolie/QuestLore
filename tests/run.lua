@@ -898,3 +898,13 @@ opts:OpenHistory()
 assert(opened==nil,"archive opener does not request protected settings in combat")
 ForeverCore,InCombatLockdown=originalCore,originalCombat
 print("PASS: 200-entry scrollable archive, independent row callbacks, empty state, secure settings opening and combat guard")
+
+local translated=loginCharacter({language="es",attachToTracker=false});tick(0.2)
+translated.Options:OpenHistory()
+local entriesBeforeLanguage=#translated.history.entries
+translated.db.visible=false
+translated.Locale.Set("en")
+local selectedArchive=translated.history:Find(translated.Options.historyKey)
+assert(translated.Options.historyBody.text==translated.history.entries[selectedArchive].body,"archive language refreshes immediately even with live window hidden")
+assert(#translated.history.entries==entriesBeforeLanguage,"language changes never duplicate archive entries")
+print("PASS: hidden live window does not delay archive language changes")

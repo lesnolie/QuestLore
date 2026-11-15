@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.15.1
+
+- Keep Polestar's accepted quest authoritative while following is enabled, including when the game selects a newly accepted side quest.
+- Remove the manual-selection latch that could leave Lore on another quest until a guide goal changed.
+- Add a one-second local target check to recover missed or late waypoint events.
+- Reread the target on ordinary quest updates, acceptance, turn-in, and removal.
+- Avoid repeated redraws for unchanged targets; cancel the safety timer on disable.
+- Test side-quest acceptance/completion, silent target changes, idle redraws, and ticker lifecycle.
+
 ## 0.15.0
 
 - Follow Polestar's accepted navigation quest directly through its target-change events.

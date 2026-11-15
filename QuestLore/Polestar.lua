@@ -24,7 +24,7 @@ local function targetState(addon)
     if not quest or quest <= 0 or quest > 2147483647 or quest ~= math.floor(quest) then quest = nil end
     local kind = field(target, "kind")
     -- Identity follows the quest/guide goal, not temporary travel labels or
-    -- moving spawn coordinates. Re-announcing the same goal is not a click.
+    -- moving spawn coordinates. This avoids unnecessary selection resets.
     local signature = table.concat({tostring(quest), tostring(kind),
         tostring(field(target, "stepIndex")), tostring(field(target, "goalIndex"))}, ":")
     if kind == "manual" or kind == "accept" then quest = nil end
@@ -39,7 +39,7 @@ function Bridge:ReadTarget()
     if not self.owner or self.owner ~= available() then return end
     local signature, quest = targetState(self.owner)
     if signature ~= self.signature then
-        self.signature, self.manualSelection = signature, false
+        self.signature = signature
         if ns.ClearSelectionContext then ns.ClearSelectionContext() end
     end
     self.quest = quest
@@ -47,8 +47,9 @@ end
 
 function Bridge:Disconnect()
     local owner, handle = self.owner, self.handle
+    if self.ticker then self.ticker:Cancel(); self.ticker = nil end
     -- Invalidate first: a stale callback can never restore the old context.
-    self.owner, self.handle, self.quest, self.signature, self.manualSelection, self.callbackToken = nil, nil, nil, nil, nil, nil
+    self.owner, self.handle, self.quest, self.signature, self.lastQuest, self.callbackToken = nil, nil, nil, nil, nil, nil
     if owner and handle then ns.API.Call(owner.Off, handle) end
 end
 
@@ -67,6 +68,13 @@ function Bridge:Sync()
         end)
         if handle then self.handle = handle else self:Disconnect() end
     end
+    if self.owner and not self.ticker and C_Timer.NewTicker then
+        local owner = self.owner
+        local token = self.callbackToken
+        self.ticker = C_Timer.NewTicker(1, function()
+            if self.owner == owner and self.callbackToken == token then self:Poll() end
+        end)
+    end
     self:ReadTarget()
     if ns.Options then ns.Options:Sync() end
     ns.QueueRefresh()
@@ -80,10 +88,20 @@ end
 function Bridge:QuestID()
     if not ns.db.followPolestar or not self.owner or self.owner ~= available() then return end
     self:ReadTarget()
-    if not self.manualSelection and ns.API.isActive(self.quest) then return self.quest end
+    if ns.API.isActive(self.quest) then return self.quest end
 end
 
-function Bridge:SelectQuest(questID)
-    local current = self:QuestID()
-    if current and questID ~= current then self.manualSelection = true end
+-- Read-only local recovery for missed/late notifications. Never ask Polestar
+-- to recalculate a route or change its waypoint, and avoid repainting steady state.
+function Bridge:Poll()
+    if not ns.db.followPolestar then return end
+    if self.owner ~= available() then self:Sync(); return end
+    if not ns.db.visible or not ns.Window.frame:IsVisible() then return end
+    local signature = self.signature
+    local quest = self:QuestID()
+    if signature ~= self.signature or quest ~= self.lastQuest
+        or (quest and ns.Window.currentID ~= quest) then
+        self.lastQuest = quest
+        ns.QueueRefresh()
+    end
 end

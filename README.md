@@ -26,7 +26,7 @@ Language, font size, attachment preference, detached position and size, visibili
 
 ## Installation
 
-1. Download `QuestLore-0.15.0.zip` from Releases.
+1. Download `QuestLore-0.15.1.zip` from Releases.
 2. Extract the **QuestLore** folder into `_forever_/Interface/AddOns/`.
 3. Check that `Interface/AddOns/QuestLore/QuestLore.toc` exists, without a second nested QuestLore folder.
 4. Enable QuestLore in the game's addon list. Restart the client for a new installation; use `/reload` when updating an existing installation.
@@ -71,9 +71,9 @@ Known quest IDs use curated narratives. An unknown or altered quest may fall bac
 
 **Options → AddOns → QuestLore → Follow Polestar's active quest** enables direct, event-based following. The option defaults to on and is saved per character. Polestar remains optional.
 
-When enabled, Lore reads the accepted quest associated with Polestar's current navigation target, including area/search objectives and turn-ins. It subscribes once to target changes and also reads the target on initial or late addon load. It does not change Polestar's route, waypoints, or quest tracking.
+When enabled, Lore reads the accepted quest associated with Polestar's current navigation target, including area/search objectives and turn-ins. It subscribes once to target changes, reads the target after quest-log updates (including accepting, completing, or removing quests), and checks once per second as recovery for missed or delayed messages. Unchanged targets do not cause repeated window redraws. It does not change Polestar's route, waypoints, or quest tracking.
 
-An explicit selection of another quest takes priority until Polestar changes to another quest or guide goal. Re-announcing the same goal, moving spawn coordinates, or changing a travel label does not cancel that manual choice. Acceptance recommendations, unaccepted quests, manual pins, missing targets, missing or incompatible APIs, and removed quests fall back to ordinary journal/super-tracked/watched quest selection. Disabling the option removes the subscription and immediately restores ordinary selection. This controls the direct bridge; native super-tracking can still reflect changes made by Polestar itself.
+While the option is enabled and Polestar has a valid accepted quest, **Polestar takes priority** over another quest selected automatically by the game or manually in the journal. This prevents accepting a side quest from leaving Lore on that quest while the guide continues elsewhere. Turn off the option to follow your own quest selection. Acceptance recommendations, unaccepted quests, manual pins, missing targets, missing or incompatible APIs, and removed quests fall back to ordinary journal/super-tracked/watched quest selection. Disabling the option cancels the safety timer, removes the subscription and immediately restores ordinary selection. This controls the direct bridge; native super-tracking can still reflect changes made by Polestar itself.
 
 See [integration details and tested limits](docs/POLESTAR.md).
 

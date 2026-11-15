@@ -12,18 +12,18 @@ Investigated on 2026-11-15 against the public `next` branch at [commit 19bd636e7
 
 QuestLore already follows game super-tracking through its existing quest API and hook. That provides partial incidental synchronization where Polestar sets it, not a complete guarantee.
 
-## Direct bridge in 0.15.0
+## Direct bridge in 0.15.1
 
-The bridge adds a per-character **Follow Polestar's active quest** option, enabled by default, with a soft dependency only. On initialization and late `ADDON_LOADED`, it feature-detects `Polestar.On`, `Polestar.Off`, and `Polestar.Nav.GetTarget`. It reads the initial target and subscribes once to `WAYPOINT_CHANGED`; it removes the subscription when disabling the feature.
+The bridge adds a per-character **Follow Polestar's active quest** option, enabled by default, with a soft dependency only. On initialization and late `ADDON_LOADED`, it feature-detects `Polestar.On`, `Polestar.Off`, and `Polestar.Nav.GetTarget`. It reads the initial target and subscribes once to `WAYPOINT_CHANGED`; it removes the subscription and cancels the safety timer when disabling the feature.
 
 The bridge accepts `tonumber(target.quest)` only when it is a positive, ordinary value and `C_QuestLog.GetLogIndexForQuestID` confirms that the quest is currently in the player's log. Absent, manual, and acceptance targets are rejected. Recommended future quests are not rendered before acceptance. Narrative data comes from QuestLore's local corpus, not a later guide step.
 
-It gives an explicit player quest click priority until the next genuine Polestar target change. For a manual or cleared target, missing addon/API, or unaccepted quest, it falls back to QuestLore's ordinary selected/super-tracked/watched quest resolution. It never calls Polestar setters, changes its route, or forces a quest to be tracked.
+While enabled, a valid accepted Polestar quest takes priority over journal selection or native super-tracking. Version 0.15.0 could latch onto a different quest selected while accepting it; 0.15.1 removes that manual-selection override. For a manual or cleared target, missing addon/API, or unaccepted quest, it falls back to QuestLore's ordinary selected/super-tracked/watched quest resolution. It never calls Polestar setters, changes its route, or forces a quest to be tracked.
 
-The bridge uses the target's quest association rather than a temporary travel-stop label. A flight master or boat is not itself the quest whose context should be explained. It subscribes to target changes without per-frame polling and coalesces events through QuestLore's refresh queue.
+The bridge uses the target's quest association rather than a temporary travel-stop label. A flight master or boat is not itself the quest whose context should be explained. It subscribes to target changes and coalesces events through QuestLore's refresh queue. Every ordinary refresh rereads the target, including quest acceptance, turn-in, removal, and log updates. A one-second read-only safety check recovers silent or delayed changes while Lore is visible. It requests a redraw only when context changes or the displayed quest disagrees; it never asks Polestar to recalculate its route.
 
 ## Automated checks
 
-The simulated-client suite tests initial load, late load, disable/re-enable without duplicate listeners, accepted quest objectives, turn-ins, acceptance recommendations, unrelated manual pins, travel legs, cleared targets, quest removal, same-ID objective changes, journal-click precedence, and absent or changed Polestar APIs.
+The simulated-client suite tests initial load, late load, disable/re-enable without duplicate listeners, accepted quest objectives, turn-ins, acceptance recommendations, unrelated manual pins, travel legs, cleared targets, quest removal, same-ID objective changes, Polestar precedence over journal clicks, accepting a side quest, completion events, silent target changes, idle redraw suppression, timer cancellation, and absent or changed Polestar APIs.
 
-These namespace functions are visible in current source but are not a versioned compatibility contract. Feature detection and a fallback remain necessary. The bridge is read-only toward Polestar. Repeated announcements of the same quest/kind/stepIndex/goalIndex preserve an explicit manual selection; a changed guide goal resumes following. The toggle controls direct target following, while Polestar may independently change the game's native super-tracking.
+These namespace functions are visible in current source but are not a versioned compatibility contract. Feature detection and a fallback remain necessary. The bridge is read-only toward Polestar. Manual journal selection is used when the integration is disabled or Polestar has no valid accepted quest. The toggle controls direct target following, while Polestar may independently change the game's native super-tracking.

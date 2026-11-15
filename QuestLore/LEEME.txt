@@ -1,4 +1,4 @@
-QuestLore 0.15.0 — El hilo de la misión
+QuestLore 0.15.1 — El hilo de la misión
 WoW: Forever · interfaz 16001 · español neutro / English
 
 Copia esta carpeta en _forever_/Interface/AddOns/QuestLore.
@@ -10,8 +10,9 @@ Opciones → AddOns → QuestLore:
 - Tamaño del texto de 12 a 24 con vista previa.
 - Seguir la misión activa de Polestar (activado por defecto, opcional).
   Se guarda por personaje. Solo sigue misiones aceptadas; si no hay un
-  objetivo válido, vuelve al seguimiento habitual. Una selección manual
-  se respeta hasta que Polestar cambie de misión u objetivo de guía.
+  objetivo válido, vuelve al seguimiento habitual. Mientras está activado,
+  Polestar tiene prioridad sobre otras selecciones del diario. Se comprueba
+  cada segundo y al aceptar, completar o actualizar tus misiones.
 - Adjuntar al final del rastreador de misiones (requiere ForeverCore).
   Sigue la columna y su ancho; al desactivarlo restaura la posición y el
   tamaño independientes. Durante combate, el cambio espera a que termine.

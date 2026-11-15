@@ -23,7 +23,7 @@ function Options:Sync()
         self.polestar:SetChecked(ns.db.followPolestar == true)
         self.polestar.label:SetText(ns.L("Seguir la misión activa de Polestar"))
         local status = ns.PolestarBridge:IsAvailable()
-            and "Sigue la misión aceptada de Polestar. Una selección manual dura hasta que cambie su objetivo."
+            and "Polestar tiene prioridad. Su misión se comprueba cada segundo y al actualizar tus misiones."
             or "Polestar no está disponible. Se usará el seguimiento habitual."
         self.polestarStatus:SetText(ns.L(status))
     end

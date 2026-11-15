@@ -230,6 +230,19 @@ Settings={
  RegisterAddOnCategory=function(category) categories[#categories+1]=category end,
 }
 C_Timer = {After=function(delay,fn) timers[#timers+1]={time=now+delay,fn=fn} end}
+local tickerCreations=0
+C_Timer.NewTicker=function(interval, callback)
+    tickerCreations=tickerCreations+1
+    local ticker={cancelled=false}
+    function ticker:Cancel() self.cancelled=true end
+    local function fire()
+        if ticker.cancelled then return end
+        callback()
+        if not ticker.cancelled then C_Timer.After(interval,fire) end
+    end
+    C_Timer.After(interval,fire)
+    return ticker
+end
 local function tick(seconds)
     local finish = now + seconds
     local iterations = 0
@@ -944,9 +957,9 @@ assert(following.Window.currentID==99,"accepted Polestar turn-in supports numeri
 announcePolestar({quest=13,kind="kill",stepIndex=3,goalIndex=1,area=50,search=true})
 assert(following.Window.currentID==13,"area/search targets follow their accepted quest directly")
 following.SelectContext(99,"tracked");tick(0.2)
-assert(following.Window.currentID==99,"explicit quest click temporarily overrides Polestar")
+assert(following.Window.currentID==13,"Polestar retains priority over automatic or manual selection of another quest")
 announcePolestar({quest=13,kind="kill",stepIndex=3,goalIndex=1,label="temporary travel leg",x=40,y=50})
-assert(following.Window.currentID==99,"same goal reannouncement or travel label preserves manual choice")
+assert(following.Window.currentID==13,"same goal or changed travel label continues following Polestar")
 announcePolestar({quest=13,kind="kill",stepIndex=3,goalIndex=2})
 assert(following.Window.currentID==13,"a new guide goal resumes direct following")
 for _,target in ipairs({{quest=13,kind="manual"},{quest=13,kind="accept"},{quest=999999,kind="kill"},{quest=0,kind="kill"},{quest=-1,kind="kill"},{quest=13.5,kind="kill"},{quest="bad",kind="kill"},{quest=math.huge,kind="kill"},{kind="flightmaster",label="travel"}}) do
@@ -970,6 +983,35 @@ announcePolestar({quest=13,kind="turnin",stepIndex=5})
 assert(following.Window.currentID==99,"disabled bridge ignores target changes")
 following.Options.polestar.scripts.OnClick();tick(0.2)
 assert(subscriptionCount==countBeforeDisable+1 and following.Window.currentID==13,"reenabling subscribes once and reads current target immediately")
+-- Reproduce accepting a new quest while the guide still points elsewhere.
+polestarTarget={quest=13,kind="kill",stepIndex=6,goalIndex=1}
+following.SelectContext(99,"selected")
+following.testEvents.scripts.OnEvent(following.testEvents,"QUEST_ACCEPTED",99)
+tick(0.2)
+assert(following.Window.currentID==13,"accepting a different quest never takes focus from Polestar")
+following.testEvents.scripts.OnEvent(following.testEvents,"QUEST_TURNED_IN",99)
+tick(0.2)
+assert(following.Window.currentID==13,"turning in another quest preserves the guide's active quest")
+-- No message and no quest event: the safety ticker must discover the new target.
+polestarTarget={quest=99,kind="kill",stepIndex=7,goalIndex=1}
+tick(1.2)
+assert(following.Window.currentID==99,"one-second polling recovers a silently changed target")
+local checks=0
+local originalRefresh=following.Refresh
+following.Refresh=function() checks=checks+1;return originalRefresh() end
+tick(2.2) -- settle lastQuest after the transition
+checks=0;tick(3.2)
+assert(checks==0,"unchanged Polestar targets do not repaint the window every second")
+following.Refresh=originalRefresh
+local tickerBefore=following.PolestarBridge.ticker
+local createdBefore=tickerCreations
+following.PolestarBridge:Sync();following.PolestarBridge:Sync()
+assert(following.PolestarBridge.ticker==tickerBefore and tickerCreations==createdBefore,"sync never duplicates the safety ticker")
+following.PolestarBridge:SetEnabled(false)
+assert(tickerBefore.cancelled and not following.PolestarBridge.ticker,"disabling cancels periodic checks")
+polestarTarget={quest=13,kind="turnin",stepIndex=8}
+following.PolestarBridge:SetEnabled(true);tick(0.2)
+assert(following.Window.currentID==13,"reenabling resumes following immediately")
 following.Locale.Set("en")
 assert(following.Options.polestar.label.text=="Follow Polestar's active quest","Polestar option is localized")
 -- A missing or incompatible addon must leave the preference available.
@@ -1015,4 +1057,4 @@ assert(disabled.Window.currentID==99 and not disabled.PolestarBridge.owner,"subs
 fakePolestar.On=oldOn
 disabled.PolestarBridge:SetEnabled(false)
 Polestar=previousPolestar
-print("PASS: direct Polestar targets, per-character toggle, one subscription, late load, manual priority, acceptance guards, removal, native fallback and API failures")
+print("PASS: direct Polestar targets, per-character toggle, one subscription/ticker, late load, strict priority, missed events, acceptance guards, removal, native fallback and API failures")

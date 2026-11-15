@@ -135,7 +135,6 @@ function ns.QueueRefresh()
 end
 
 function ns.SelectContext(id, mode)
-    ns.PolestarBridge:SelectQuest(id or ns.API.selected())
     selectionPending = true
     selectionMode, selectionTargetID = mode or "selected", id or ns.API.selected()
     ns.QueueRefresh()

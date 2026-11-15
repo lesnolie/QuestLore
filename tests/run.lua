@@ -186,7 +186,9 @@ function Methods:SetFont(font,size,flags) self.fontName,self.fontSize,self.fontF
 function Methods:GetFont() return "Interface/Fonts/FRIZQT__.TTF", 14, "" end
 function Methods:GetStringHeight()
     local size=self.fontSize or 16
-    return math.ceil(#(self.text or "") / math.max(1,math.floor((self.width or 336)/(size*0.5)))) * (size+4)
+    local height=math.ceil(#(self.text or "") / math.max(1,math.floor((self.width or 336)/(size*0.5)))) * (size+4)
+    if self.fontString and self.height and self.height>0 then return math.min(height,self.height) end
+    return height
 end
 function Methods:SetVerticalScroll(n) self.scroll = n end
 function Methods:GetVerticalScroll() return self.scroll or 0 end
@@ -216,7 +218,7 @@ local function object(parent)
     return obj
 end
 function CreateFrame(_,name,parent,template) local obj=object(parent);if name then _G[name]=obj end;if template=="UIPanelScrollFrameTemplate" then obj.ScrollBar=object(obj) end;if template=="OptionsSliderTemplate" then obj.Low=object(obj);obj.High=object(obj) end;return obj end
-function Methods:CreateFontString() return object(self) end
+function Methods:CreateFontString() local font=object(self);font.fontString=true;return font end
 function Methods:CreateTexture() return object(self) end
 UIParent = object()
 UIParent:SetSize(1920,1080)
@@ -875,6 +877,21 @@ assert(not dock.Window.needsScroll and not dock.Window.scroll.ScrollBar:IsShown(
 assert(dock.Window.body:GetWidth()==bridgeWidth-16,"released scrollbar gutter returns to the narrative")
 assert(dock.Window.frame:GetHeight()==dock.Window:GetDesiredAttachedHeight(),"unconstrained section grows exactly to full narrative height")
 assert(dock.Window.scroll:GetVerticalScroll()==0,"reclaiming space clears obsolete scrolling")
+-- Model client FontStrings whose measured height is bounded by an old
+-- explicit height. Short-to-long and narrow-to-wide transitions must unbound
+-- both regions before measuring, instead of treating ellipsized text as fitted.
+dock.Window.title:SetHeight(12)
+dock.Window.body:SetHeight(20)
+dock.Window:Render({key=stableKey,id=dock.Window.currentID,title=string.rep("Una nueva Peste ",5),body=string.rep("Johaan necesita muestras para investigar una nueva fórmula. ",10),kind="story",source=""})
+bridgeRoom=900;host:MarkDirty();tick(0.2)
+assert(dock.Window.body.height==0,"narrative remains naturally sized rather than fixed to an old clipped height")
+assert(dock.Window.naturalContentHeight>100 and dock.Window.title:GetStringHeight()>12,"old title and body bounds never hide overflow from measurement")
+assert(not dock.Window.needsScroll and dock.Window.frame:GetHeight()==dock.Window:GetDesiredAttachedHeight(),"ample tracker space expands to the complete long story")
+bridgeRoom=140;host:MarkDirty();tick(0.2)
+assert(dock.Window.needsScroll and dock.Window.scroll.ScrollBar:IsShown(),"real space limits scroll the complete text rather than ellipsizing it")
+assert(dock.Window.content:GetHeight()>140 and dock.Window.body:GetStringHeight()>20,"scroll child retains the entire narrative beyond the viewport")
+bridgeRoom=900;probe.scripts.OnSizeChanged(probe,300,900);tick(0.2)
+assert(not dock.Window.needsScroll and dock.Window.body:GetWidth()==bridgeWidth-16,"restored space reveals the full text at full width")
 local tallHeight=dock.Window.frame:GetHeight()
 for i=1,5 do host:MarkDirty();tick(0.2) end
 assert(dock.Window.frame:GetHeight()==tallHeight and not dock.Window.needsScroll,"repeated host passes converge without scroll-width feedback")

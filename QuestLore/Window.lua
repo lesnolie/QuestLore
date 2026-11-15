@@ -61,12 +61,15 @@ function Window:Layout()
         self.content:SetWidth(width)
         self.title:SetWidth(width)
         self.body:SetWidth(width)
+        -- Clear the previous text bounds before measuring. A fixed height can
+        -- make the client ellipsize the text and report only the clipped height.
+        self.title:SetHeight(0)
+        self.body:SetHeight(0)
         local titleHeight = math.ceil(self.title:GetStringHeight())
         self.title:SetHeight(titleHeight)
         self.body:ClearAllPoints()
         self.body:SetPoint("TOPLEFT", self.content, "TOPLEFT", 0, -titleHeight - 8)
         local bodyHeight = math.ceil(self.body:GetStringHeight())
-        self.body:SetHeight(bodyHeight)
         local height = titleHeight + 8 + bodyHeight + 6
         self.content:SetHeight(height)
         return height

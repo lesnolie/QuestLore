@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.15.3
+
+- Fix narrative ellipsis/clipping without a scrollbar after the 0.15.2 text-height change.
+- Clear previous title/body height constraints before measuring; leave narrative text naturally sized.
+- Preserve complete text in the scroll child so a genuine viewport limit produces scrolling instead of ellipsis.
+- Model bounded FontString measurements in the simulated client and test short-to-long, constrained-to-expanded, and stale-height transitions.
+
 ## 0.15.2
 
 - Reflow attached Lore after sibling tracker sections move or collapse, reclaiming released space once their anchors settle.

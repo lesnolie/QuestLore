@@ -28,7 +28,7 @@ Select a quest in your quest journal or tracker to read its context in a transpa
 
 Built for **World of Warcraft: Forever, interface 16001**. Retail and other Classic clients are not verified. Extract the QuestLore folder into `_forever_/Interface/AddOns/`. Restart for a new installation or use `/reload` after an update.
 
-**ForeverCore** is optional and enables attachment below the quest tracker. Without it, Lore works as an independent window. Polestar is not required, and full direct Polestar navigation synchronization is not included in this release.
+**ForeverCore** is optional and enables attachment below the quest tracker. Without it, Lore works as an independent window. Polestar is optional. Enable or disable **Follow Polestar's active quest** in QuestLore options to follow its accepted navigation quest directly. The setting defaults to on and is saved per character.
 
 Open **Options → AddOns → QuestLore** for language, text size, attachment, and story history. `/lore` shows the window.
 
@@ -40,7 +40,7 @@ QuestLore is open source under the MIT License. World of Warcraft and its underl
 
 - Avatar: `media/questlore-icon-400.png`, exactly 400×400 PNG.
 - Original generated image: `media/questlore-icon-original.png`.
-- Upload archive: `dist/QuestLore-0.14.0.zip` from the GitHub release.
+- Upload archive: `dist/QuestLore-0.15.0.zip` from the GitHub release.
 - Source: https://github.com/mexiar/QuestLore
 - Issues: https://github.com/mexiar/QuestLore/issues
 - License selection: MIT License.

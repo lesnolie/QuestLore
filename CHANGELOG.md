@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.15.0
+
+- Follow Polestar's accepted navigation quest directly through its target-change events.
+- Add a bilingual per-character toggle, enabled by default, without requiring Polestar.
+- Support initial and late addon load, area/search objectives, and accepted turn-in targets.
+- Respect explicit manual quest selection until the next changed quest/guide goal.
+- Fall back for manual pins, acceptance recommendations, unaccepted or removed quests, missing targets, and unavailable APIs.
+- Unsubscribe on disable without changing Polestar's navigation or native quest tracking.
+- Test subscription lifecycle, duplicate events, fallback, errors, re-enabling, and saved preferences.
+
 ## 0.14.0
 
 - Remove all pagination, Current/History labels, and counters from live Lore.

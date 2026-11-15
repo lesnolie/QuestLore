@@ -4,7 +4,7 @@
 
 **Understand why your character is doing a quest.** QuestLore adds short narrative context to your active quest in World of Warcraft: Forever, in English or neutral Spanish.
 
-[Download the latest release](https://github.com/mexiar/QuestLore/releases/latest) · [Report an issue](https://github.com/mexiar/QuestLore/issues) · [Polestar integration research](docs/POLESTAR.md)
+[Download the latest release](https://github.com/mexiar/QuestLore/releases/latest) · [Report an issue](https://github.com/mexiar/QuestLore/issues) · [Polestar integration](docs/POLESTAR.md)
 
 ## What it does
 
@@ -26,7 +26,7 @@ Language, font size, attachment preference, detached position and size, visibili
 
 ## Installation
 
-1. Download `QuestLore-0.14.0.zip` from Releases.
+1. Download `QuestLore-0.15.0.zip` from Releases.
 2. Extract the **QuestLore** folder into `_forever_/Interface/AddOns/`.
 3. Check that `Interface/AddOns/QuestLore/QuestLore.toc` exists, without a second nested QuestLore folder.
 4. Enable QuestLore in the game's addon list. Restart the client for a new installation; use `/reload` when updating an existing installation.
@@ -69,7 +69,13 @@ Known quest IDs use curated narratives. An unknown or altered quest may fall bac
 
 ## Polestar
 
-Polestar sometimes sets the game's super-tracked quest, which QuestLore already follows. A complete link to Polestar's navigation target is technically possible through `Polestar.Nav.GetTarget()` and its `WAYPOINT_CHANGED` message. It needs guards for manual waypoints, travel legs, and quests not yet accepted. **This release does not add that direct bridge or claim complete Polestar synchronization.** See the [source-based investigation](docs/POLESTAR.md).
+**Options → AddOns → QuestLore → Follow Polestar's active quest** enables direct, event-based following. The option defaults to on and is saved per character. Polestar remains optional.
+
+When enabled, Lore reads the accepted quest associated with Polestar's current navigation target, including area/search objectives and turn-ins. It subscribes once to target changes and also reads the target on initial or late addon load. It does not change Polestar's route, waypoints, or quest tracking.
+
+An explicit selection of another quest takes priority until Polestar changes to another quest or guide goal. Re-announcing the same goal, moving spawn coordinates, or changing a travel label does not cancel that manual choice. Acceptance recommendations, unaccepted quests, manual pins, missing targets, missing or incompatible APIs, and removed quests fall back to ordinary journal/super-tracked/watched quest selection. Disabling the option removes the subscription and immediately restores ordinary selection. This controls the direct bridge; native super-tracking can still reflect changes made by Polestar itself.
+
+See [integration details and tested limits](docs/POLESTAR.md).
 
 ## Development
 

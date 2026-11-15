@@ -290,6 +290,7 @@ end
 
 QuestLoreCharacterDB = nil
 loadModule("QuestAPI.lua", ns)
+loadModule("Polestar.lua", ns)
 loadModule("Window.lua", ns)
 loadModule("Tracker.lua", ns)
 loadModule("Options.lua", ns)
@@ -490,7 +491,7 @@ equal(ns.Window.currentID,99,"reopening reads current quest after hidden changes
 ns.SetVisible(false)
 ns.db.position={x=200,y=80}
 local reloaded = {}
-for _,file in ipairs({"Text.lua","Locale.lua","Stories.lua","Stories_Undead.lua","Stories_ForeverTirisfal.lua","Narratives.lua","Origins_Stories.lua","Origins.lua","Model.lua","History.lua","QuestAPI.lua","Window.lua","Tracker.lua","Options.lua","Core.lua"}) do
+for _,file in ipairs({"Text.lua","Locale.lua","Stories.lua","Stories_Undead.lua","Stories_ForeverTirisfal.lua","Narratives.lua","Origins_Stories.lua","Origins.lua","Model.lua","History.lua","QuestAPI.lua","Polestar.lua","Window.lua","Tracker.lua","Options.lua","Core.lua"}) do
     loadModule(file,reloaded)
 end
 local reloadEvents=frames[#frames]
@@ -508,7 +509,7 @@ equal(reloaded.Window.body.fontSize,18,"font size survives a reload")
 QuestLoreCharacterDB=nil
 logged={};tracked=0
 local fresh={}
-for _,file in ipairs({"Text.lua","Locale.lua","Stories.lua","Stories_Undead.lua","Stories_ForeverTirisfal.lua","Narratives.lua","Origins_Stories.lua","Origins.lua","Model.lua","History.lua","QuestAPI.lua","Window.lua","Tracker.lua","Options.lua","Core.lua"}) do
+for _,file in ipairs({"Text.lua","Locale.lua","Stories.lua","Stories_Undead.lua","Stories_ForeverTirisfal.lua","Narratives.lua","Origins_Stories.lua","Origins.lua","Model.lua","History.lua","QuestAPI.lua","Polestar.lua","Window.lua","Tracker.lua","Options.lua","Core.lua"}) do
     loadModule(file,fresh)
 end
 local freshEvents=frames[#frames]
@@ -634,10 +635,11 @@ window:SetMinimized(true)
 local function loginCharacter(db)
     QuestLoreCharacterDB=db
     local character={}
-    for _,file in ipairs({"Text.lua","Locale.lua","Stories.lua","Stories_Undead.lua","Stories_ForeverTirisfal.lua","Narratives.lua","Origins_Stories.lua","Origins.lua","Model.lua","History.lua","QuestAPI.lua","Window.lua","Tracker.lua","Options.lua","Core.lua"}) do
+    for _,file in ipairs({"Text.lua","Locale.lua","Stories.lua","Stories_Undead.lua","Stories_ForeverTirisfal.lua","Narratives.lua","Origins_Stories.lua","Origins.lua","Model.lua","History.lua","QuestAPI.lua","Polestar.lua","Window.lua","Tracker.lua","Options.lua","Core.lua"}) do
         loadModule(file,character)
     end
     local event=frames[#frames]
+    character.testEvents=event
     event.scripts.OnEvent(event,"PLAYER_LOGIN")
     return character
 end
@@ -908,3 +910,109 @@ local selectedArchive=translated.history:Find(translated.Options.historyKey)
 assert(translated.Options.historyBody.text==translated.history.entries[selectedArchive].body,"archive language refreshes immediately even with live window hidden")
 assert(#translated.history.entries==entriesBeforeLanguage,"language changes never duplicate archive entries")
 print("PASS: hidden live window does not delay archive language changes")
+
+
+-- Polestar's real dot-style message bus and navigation-target contract.
+local previousPolestar=Polestar
+local polestarTarget={quest=13,kind="kill",stepIndex=1,goalIndex=1,map=1,x=20,y=30}
+local listeners,subscriptionCount,removalCount={},0,0
+local fakePolestar={Nav={GetTarget=function() return polestarTarget end}}
+function fakePolestar.On(message,callback)
+    assert(message=="WAYPOINT_CHANGED")
+    local handle={callback=callback,live=true}
+    listeners[#listeners+1]=handle;subscriptionCount=subscriptionCount+1
+    return handle
+end
+function fakePolestar.Off(handle) handle.live=false;removalCount=removalCount+1 end
+local function announcePolestar(target)
+    polestarTarget=target
+    for _,handle in ipairs(listeners) do if handle.live then handle.callback(target) end end
+    tick(0.2)
+end
+logged[13]={title="La Milicia Popular II",description="Los saqueadores Defias amenazan a la Milicia."}
+logged[99]={title="Una misión desconocida",description=narrative}
+tracked=99;QuestMapFrame.DetailsFrame:Hide()
+Polestar=fakePolestar
+local following=loginCharacter({attachToTracker=false});tick(0.2)
+assert(following.db.followPolestar and following.Options.polestar.checked,"Polestar following defaults on per character")
+assert(following.Window.currentID==13,"initial Polestar target overrides unrelated native tracking")
+assert(subscriptionCount==1,"one subscription on initial load")
+following.PolestarBridge:Sync();following.PolestarBridge:Sync();tick(0.2)
+assert(subscriptionCount==1,"repeated addon sync never duplicates subscriptions")
+announcePolestar({quest="99",kind="turnin",stepIndex=2,goalIndex=1})
+assert(following.Window.currentID==99,"accepted Polestar turn-in supports numeric string IDs")
+announcePolestar({quest=13,kind="kill",stepIndex=3,goalIndex=1,area=50,search=true})
+assert(following.Window.currentID==13,"area/search targets follow their accepted quest directly")
+following.SelectContext(99,"tracked");tick(0.2)
+assert(following.Window.currentID==99,"explicit quest click temporarily overrides Polestar")
+announcePolestar({quest=13,kind="kill",stepIndex=3,goalIndex=1,label="temporary travel leg",x=40,y=50})
+assert(following.Window.currentID==99,"same goal reannouncement or travel label preserves manual choice")
+announcePolestar({quest=13,kind="kill",stepIndex=3,goalIndex=2})
+assert(following.Window.currentID==13,"a new guide goal resumes direct following")
+for _,target in ipairs({{quest=13,kind="manual"},{quest=13,kind="accept"},{quest=999999,kind="kill"},{quest=0,kind="kill"},{quest=-1,kind="kill"},{quest=13.5,kind="kill"},{quest="bad",kind="kill"},{quest=math.huge,kind="kill"},{kind="flightmaster",label="travel"}}) do
+    announcePolestar(target)
+    assert(following.Window.currentID==99,"manual, future, malformed or travel-only targets fall back to native tracking")
+end
+announcePolestar(nil)
+assert(following.Window.currentID==99,"cleared Polestar target falls back")
+announcePolestar({quest=13,kind="kill",stepIndex=4})
+assert(following.Window.currentID==13)
+logged[13]=nil;following.Refresh()
+assert(following.Window.currentID==99,"removing Polestar quest stops rendering its active story")
+logged[13]={title="La Milicia Popular II",description="Los saqueadores Defias amenazan a la Milicia."}
+following.Refresh()
+assert(following.Window.currentID==13,"acceptance/log updates can make a target valid without a new waypoint event")
+local countBeforeDisable=subscriptionCount
+following.Options.polestar.scripts.OnClick();tick(0.2)
+assert(not following.db.followPolestar and not following.Options.polestar.checked and removalCount==1,"options toggle unsubscribes and persists disabled choice")
+assert(following.Window.currentID==99,"disabling immediately returns to native selection")
+announcePolestar({quest=13,kind="turnin",stepIndex=5})
+assert(following.Window.currentID==99,"disabled bridge ignores target changes")
+following.Options.polestar.scripts.OnClick();tick(0.2)
+assert(subscriptionCount==countBeforeDisable+1 and following.Window.currentID==13,"reenabling subscribes once and reads current target immediately")
+following.Locale.Set("en")
+assert(following.Options.polestar.label.text=="Follow Polestar's active quest","Polestar option is localized")
+-- A missing or incompatible addon must leave the preference available.
+following.PolestarBridge:SetEnabled(false)
+Polestar=nil
+local absent=loginCharacter({attachToTracker=false});tick(0.2)
+assert(absent.db.followPolestar and absent.Window.currentID==99,"missing optional addon preserves intent and normal behavior")
+assert(absent.Options.polestarStatus.text:find("Polestar",1,true))
+Polestar=fakePolestar
+absent.testEvents.scripts.OnEvent(absent.testEvents,"ADDON_LOADED","Polestar");tick(0.2)
+assert(absent.Window.currentID==13,"late Polestar load applies the current target")
+absent.PolestarBridge:SetEnabled(false)
+local disabled=loginCharacter({attachToTracker=false,followPolestar=false});tick(0.2)
+assert(not disabled.db.followPolestar and disabled.Window.currentID==99 and not disabled.PolestarBridge.handle,"saved disabled preference survives login")
+local savedGetter=fakePolestar.Nav.GetTarget
+fakePolestar.Nav.GetTarget=function() error("API unavailable") end
+disabled.PolestarBridge:SetEnabled(true);tick(0.2)
+assert(disabled.Window.currentID==99,"getter errors use fallback instead of breaking refresh")
+fakePolestar.Nav.GetTarget=savedGetter
+fakePolestar.Nav=nil
+disabled.Refresh()
+assert(disabled.Window.currentID==99,"changed API never leaves a stale Polestar quest selected")
+fakePolestar.Nav={GetTarget=savedGetter}
+disabled.PolestarBridge:SetEnabled(false)
+-- A broken Off implementation must not reactivate a stale closure on re-enable.
+local oldOff=fakePolestar.Off
+fakePolestar.Off=function() error("unsubscribe unavailable") end
+disabled.PolestarBridge:SetEnabled(true);tick(0.2)
+local staleCallback=listeners[#listeners].callback
+disabled.PolestarBridge:SetEnabled(false)
+disabled.PolestarBridge:SetEnabled(true);tick(0.2)
+local reads=0
+fakePolestar.Nav.GetTarget=function() reads=reads+1;return polestarTarget end
+staleCallback({quest=99,kind="kill"})
+assert(reads==0,"invalidated callback stays inert even when unsubscription failed")
+fakePolestar.Nav.GetTarget=savedGetter
+fakePolestar.Off=oldOff
+disabled.PolestarBridge:SetEnabled(false)
+local oldOn=fakePolestar.On
+fakePolestar.On=function() error("subscribe unavailable") end
+disabled.PolestarBridge:SetEnabled(true);tick(0.2)
+assert(disabled.Window.currentID==99 and not disabled.PolestarBridge.owner,"subscription errors preserve native fallback")
+fakePolestar.On=oldOn
+disabled.PolestarBridge:SetEnabled(false)
+Polestar=previousPolestar
+print("PASS: direct Polestar targets, per-character toggle, one subscription, late load, manual priority, acceptance guards, removal, native fallback and API failures")

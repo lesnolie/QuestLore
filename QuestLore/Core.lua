@@ -57,7 +57,13 @@ function QuestLore_History()
     if ns.ready then ns.Options:OpenHistory() end
 end
 
+function ns.ClearSelectionContext()
+    selectionMode, selectionTargetID = nil, nil
+end
+
 local function resolveContext()
+    local polestarID = ns.PolestarBridge:QuestID()
+    if polestarID then return polestarID end
     -- The latest explicit interaction wins over a stale, still-open journal.
     if selectionMode == "tracked" then
         local id = ns.API.superTracked()
@@ -129,6 +135,7 @@ function ns.QueueRefresh()
 end
 
 function ns.SelectContext(id, mode)
+    ns.PolestarBridge:SelectQuest(id or ns.API.selected())
     selectionPending = true
     selectionMode, selectionTargetID = mode or "selected", id or ns.API.selected()
     ns.QueueRefresh()
@@ -181,6 +188,7 @@ local function initialise()
     QuestLoreCharacterDB = type(QuestLoreCharacterDB) == "table" and QuestLoreCharacterDB or {}
     ns.db = QuestLoreCharacterDB
     if ns.db.attachToTracker == nil then ns.db.attachToTracker = true end
+    if ns.db.followPolestar == nil then ns.db.followPolestar = true end
     ns.locale = GetLocale()
     local profile = ns.API.Profile()
     if profile.level and profile.level > 1 then ns.db.adventureStarted = true end
@@ -206,6 +214,7 @@ local function initialise()
     ns.Options:Create()
     ns.ready = true
     installHooks()
+    ns.PolestarBridge:Sync()
     ns.SetVisible(ns.db.visible)
 end
 
@@ -214,7 +223,7 @@ events:SetScript("OnEvent", function(_, event, a, b)
     if event == "PLAYER_LOGIN" then
         initialise()
     elseif event == "ADDON_LOADED" then
-        if ns.ready then installHooks() end
+        if ns.ready then installHooks(); ns.PolestarBridge:Sync() end
     elseif ns.ready then
         if event == "QUEST_REMOVED" or event == "QUEST_TURNED_IN" then
             ns.db.quests[a] = nil

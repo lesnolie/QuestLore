@@ -26,7 +26,7 @@ Language, font size, attachment preference, detached position and size, visibili
 
 ## Installation
 
-1. Download `QuestLore-0.15.3.zip` from Releases.
+1. Download `QuestLore-0.15.4.zip` from Releases.
 2. Extract the **QuestLore** folder into `_forever_/Interface/AddOns/`.
 3. Check that `Interface/AddOns/QuestLore/QuestLore.toc` exists, without a second nested QuestLore folder.
 4. Enable QuestLore in the game's addon list. Restart the client for a new installation; use `/reload` when updating an existing installation.
@@ -79,7 +79,7 @@ See [integration details and tested limits](docs/POLESTAR.md).
 
 ## Development
 
-The addon uses Lua 5.1 and the game's UI APIs without bundled libraries. Runtime source and the editable narrative tables are in `QuestLore/`. `Narratives.lua` contains the bilingual quest corpus; `Origins_Stories.lua` contains the integrated opening variants. `tests/run.lua` simulates quest APIs, events, history, options, layout, and asynchronous loading. It also checks every narrative ID across supported language selections and seven client locales.
+The addon uses Lua 5.1 and the game's UI APIs without bundled libraries. Runtime source and the editable narrative tables are in `QuestLore/`. `Narratives.lua` contains the bilingual quest corpus; `Origins_Stories.lua` contains the integrated opening variants. `tests/run.lua` simulates quest APIs, events, history, options, layout, and asynchronous loading. `tests/layout.lua` checks 590 geometry cases across all font sizes (12–24), three tracker widths, three space budgets, both languages, paragraphs, long tokens, minimize/restore, and detached resizing. It independently derives the native viewport from recorded anchors and tests delayed range updates, last-line reachability, reading-position preservation, and idle convergence. It also checks every narrative ID across supported language selections and seven client locales.
 
 Requirements: **Python 3** and **Lua 5.1**.
 

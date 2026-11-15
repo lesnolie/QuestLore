@@ -55,40 +55,64 @@ function Window:SyncScrollbar()
     end
 end
 
+-- Native scroll ranges and wrapped font geometry can settle a frame later.
+-- Recheck once after changes, without adding a continuous layout timer.
+function Window:QueueLayout()
+    if self.layoutQueued then return end
+    self.layoutQueued = true
+    C_Timer.After(0, function()
+        self.layoutQueued = false
+        if not self.frame:IsVisible() then self.pendingScrollFraction = nil; return end
+        self.settlingLayout = true
+        self:Layout()
+        self.settlingLayout = false
+        self.pendingScrollFraction = nil
+    end)
+end
+
+function Window:MeasureContent(width)
+    self.content:SetWidth(width)
+    self.title:SetWidth(width)
+    self.body:SetWidth(width)
+    self.title:SetHeight(0)
+    self.body:SetHeight(0)
+    local titleHeight = math.ceil(self.title:GetStringHeight())
+    self.title:SetHeight(titleHeight)
+    self.body:ClearAllPoints()
+    self.body:SetPoint("TOPLEFT", self.content, "TOPLEFT", 0, -titleHeight - 8)
+    local height = titleHeight + 8 + math.ceil(self.body:GetStringHeight()) + 6
+    self.content:SetHeight(height)
+    return height
+end
+
 function Window:Layout()
-    local viewport = self.expandedHeight - self.HEADER_HEIGHT - self.CONTENT_TOP - self.FOOTER_HEIGHT
-    local function measure(width)
-        self.content:SetWidth(width)
-        self.title:SetWidth(width)
-        self.body:SetWidth(width)
-        -- Clear the previous text bounds before measuring. A fixed height can
-        -- make the client ellipsize the text and report only the clipped height.
-        self.title:SetHeight(0)
-        self.body:SetHeight(0)
-        local titleHeight = math.ceil(self.title:GetStringHeight())
-        self.title:SetHeight(titleHeight)
-        self.body:ClearAllPoints()
-        self.body:SetPoint("TOPLEFT", self.content, "TOPLEFT", 0, -titleHeight - 8)
-        local bodyHeight = math.ceil(self.body:GetStringHeight())
-        local height = titleHeight + 8 + bodyHeight + 6
-        self.content:SetHeight(height)
-        return height
-    end
-    -- Give readable summaries the full text column. Only reserve the scroll
-    -- controls' gutter if the text overflows at full width; this first pass
-    -- also keeps wrapping stable around the scrollbar threshold.
-    local height = measure(math.max(1, self.frame:GetWidth() - 16))
-    self.naturalContentHeight = height
-    self.needsScroll = height > viewport + 0.5
-    if self.needsScroll then measure(math.max(1, self.frame:GetWidth() - 40)) end
+    if self.layingOut then return end
+    self.layingOut = true
+    local previousNatural, previousWidth = self.naturalContentHeight, self.layoutWidth
+    local width = self.frame:GetWidth()
+    local height = ns.db.minimized and self.expandedHeight or self.frame:GetHeight()
+    local viewport = math.max(0, height - self.HEADER_HEIGHT - self.CONTENT_TOP - self.FOOTER_HEIGHT)
+    self.layoutWidth, self.viewportHeight = width, viewport
+    -- Decide fit at full width first. The scroll gutter must never influence
+    -- the height requested from the host, or trap the layout in a narrow state.
+    local natural = self:MeasureContent(math.max(1, width - 16))
+    self.naturalContentHeight = natural
+    self.needsScroll = natural > viewport + 0.01
+    local contentHeight = self.needsScroll and self:MeasureContent(math.max(1, width - 40)) or natural
+    self.scrollRange = self.needsScroll and math.max(0, contentHeight - viewport) or 0
     self.scroll:ClearAllPoints()
     self.scroll:SetPoint("TOPLEFT", 8, -self.HEADER_HEIGHT - self.CONTENT_TOP)
     self.scroll:SetPoint("BOTTOMRIGHT", self.needsScroll and -32 or -8, self.FOOTER_HEIGHT)
     if self.scroll.UpdateScrollChildRect then self.scroll:UpdateScrollChildRect() end
-    if not self.needsScroll then self.scroll:SetVerticalScroll(0) end
-    self.scroll:SetVerticalScroll(math.min(self.scroll:GetVerticalScroll(), self.scroll:GetVerticalScrollRange()))
+    local offset = self.scroll:GetVerticalScroll()
+    if self.pendingScrollFraction then offset = self.pendingScrollFraction * self.scrollRange end
+    self.scroll:SetVerticalScroll(math.max(0, math.min(offset, self.scrollRange)))
     self:SyncScrollbar()
-    if not self.applyingAttachedLayout and ns.Tracker and ns.Tracker.Changed then ns.Tracker:Changed() end
+    self.layingOut = false
+    if not self.applyingAttachedLayout and ns.Tracker and ns.Tracker.Changed
+        and (not self.settlingLayout or natural ~= previousNatural or width ~= previousWidth) then
+        ns.Tracker:Changed()
+    end
 end
 
 function Window:FinishResize()
@@ -107,23 +131,22 @@ function Window:SetFontSize(value)
     value = tonumber(value) or self.DEFAULT_FONT
     if value ~= value then value = self.DEFAULT_FONT end
     value = math.max(self.MIN_FONT, math.min(self.MAX_FONT, math.floor(value + 0.5)))
-    local range = self.scroll:GetVerticalScrollRange()
-    local fraction = range > 0 and self.scroll:GetVerticalScroll() / range or 0
+    local range = self.scrollRange or 0
+    self.pendingScrollFraction = range > 0 and math.max(0, math.min(1, self.scroll:GetVerticalScroll() / range)) or 0
     ns.db.fontSize = value
     self.title:SetFont(self.fontName, value + 2, "")
     self.body:SetFont(self.fontName, value, "")
     self.body:SetSpacing(math.max(2, math.floor(value / 4)))
     self:Layout()
-    if self.needsScroll then
-        self.scroll:SetVerticalScroll(math.max(0, math.min(1, fraction)) * self.scroll:GetVerticalScrollRange())
-    end
+    self:QueueLayout()
     if ns.Options then ns.Options:Sync() end
 end
 
 function Window:Scroll(direction)
     if not self.frame or not self.frame:IsShown() or ns.db.minimized then return end
+    self.pendingScrollFraction = nil
     local nextValue = self.scroll:GetVerticalScroll() + direction * 54
-    self.scroll:SetVerticalScroll(math.max(0, math.min(self.scroll:GetVerticalScrollRange(), nextValue)))
+    self.scroll:SetVerticalScroll(math.max(0, math.min(self.scrollRange or 0, nextValue)))
 end
 
 function Window:SavePosition()
@@ -192,6 +215,7 @@ function Window:SetAttachedLayout(width, height)
     self.applyingSize = false
     self.grip:Hide()
     self:Layout()
+    self:QueueLayout()
     self.applyingAttachedLayout = false
 end
 
@@ -212,6 +236,7 @@ function Window:RestoreDetachedLayout()
     self.applyingSize = false
     if not ns.db.minimized then self.grip:Show() end
     self:Layout()
+    self:QueueLayout()
     self.applyingAttachedLayout = false
 end
 
@@ -301,7 +326,19 @@ function Window:Create()
     scroll:SetPoint("BOTTOMRIGHT", -32, self.FOOTER_HEIGHT)
     scroll:EnableMouseWheel(true)
     scroll:SetScript("OnMouseWheel", function(_, delta) self:Scroll(-delta) end)
-    scroll:HookScript("OnScrollRangeChanged", function() self:SyncScrollbar() end)
+    scroll:HookScript("OnScrollRangeChanged", function()
+        self:SyncScrollbar()
+        if not self.layingOut and self.pendingScrollFraction then
+            self.scroll:SetVerticalScroll(self.pendingScrollFraction * (self.scrollRange or 0))
+        end
+    end)
+    scroll:HookScript("OnSizeChanged", function() if not self.layingOut then self:QueueLayout() end end)
+    scroll:HookScript("OnShow", function() self:SyncScrollbar(); self:QueueLayout() end)
+    if scroll.ScrollBar then
+        scroll.ScrollBar:HookScript("OnShow", function(bar)
+            if not self.needsScroll or ns.db.minimized then bar:Hide() end
+        end)
+    end
     self.scroll = scroll
     local content = CreateFrame("Frame", nil, scroll)
     content:SetSize(frame:GetWidth() - 40, 1); scroll:SetScrollChild(content)
@@ -310,11 +347,15 @@ function Window:Create()
     title:SetPoint("TOPLEFT", 0, 0); title:SetWidth(content:GetWidth())
     title:SetJustifyH("LEFT"); title:SetJustifyV("TOP"); title:SetWordWrap(true)
     title:SetTextColor(unpack(palette.gold)); shadow(title)
+    if title.SetMaxLines then title:SetMaxLines(0) end
+    if title.SetNonSpaceWrap then title:SetNonSpaceWrap(true) end
     self.title = title
     local body = content:CreateFontString(nil, "OVERLAY", "GameFontNormal")
     body:SetPoint("TOPLEFT", 0, 0); body:SetWidth(content:GetWidth())
     body:SetTextColor(unpack(palette.text)); body:SetJustifyH("LEFT"); body:SetJustifyV("TOP"); body:SetWordWrap(true)
     shadow(body)
+    if body.SetMaxLines then body:SetMaxLines(0) end
+    if body.SetNonSpaceWrap then body:SetNonSpaceWrap(true) end
     self.body = body
 
     local grip = CreateFrame("Button", "QuestLoreResizeGrip", frame)
@@ -339,6 +380,7 @@ function Window:Create()
         if self.applyingSize then return end
         if not ns.db.minimized then self.expandedHeight = height end
         self:Layout()
+        self:QueueLayout()
     end)
     frame:SetScript("OnShow", function() if ns.ready then ns.QueueRefresh() end end)
     frame:SetScript("OnHide", function() self:FinishResize() end)
@@ -349,9 +391,10 @@ end
 function Window:Render(model)
     local changedQuest = self.currentKey ~= model.key
     self.currentID, self.currentKey, self.currentTitle = model.id, model.key, model.title
+    if changedQuest then self.pendingScrollFraction = nil; self.scroll:SetVerticalScroll(0) end
     self.title:SetText(model.title); self.body:SetText(model.body)
     self:Layout()
-    if changedQuest then self.scroll:SetVerticalScroll(0) end
+    self:QueueLayout()
 end
 
 function Window:Localize()

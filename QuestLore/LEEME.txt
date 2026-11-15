@@ -1,4 +1,4 @@
-QuestLore 0.15.3 — El hilo de la misión
+QuestLore 0.15.4 — El hilo de la misión
 WoW: Forever · interfaz 16001 · español neutro / English
 
 Copia esta carpeta en _forever_/Interface/AddOns/QuestLore.

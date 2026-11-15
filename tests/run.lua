@@ -166,8 +166,10 @@ function Methods:Hide()
 end
 function Methods:IsShown() return self.shown ~= false end
 function Methods:IsVisible() return self:IsShown() and (not self.parent or self.parent:IsVisible()) end
-function Methods:SetPoint(...) self.point = {...} end
-function Methods:ClearAllPoints() self.point = nil end
+function Methods:SetPoint(...)
+    self.point={...};self.points=self.points or {};self.points[self.point[1]]=self.point
+end
+function Methods:ClearAllPoints() self.point=nil;self.points={} end
 function Methods:SetSize(w,h) self.width, self.height = w,h end
 function Methods:SetWidth(w) self.width = w end
 function Methods:SetHeight(h) self.height = h end
@@ -186,7 +188,13 @@ function Methods:SetFont(font,size,flags) self.fontName,self.fontSize,self.fontF
 function Methods:GetFont() return "Interface/Fonts/FRIZQT__.TTF", 14, "" end
 function Methods:GetStringHeight()
     local size=self.fontSize or 16
-    local height=math.ceil(#(self.text or "") / math.max(1,math.floor((self.width or 336)/(size*0.5)))) * (size+4)
+    local columns=math.max(1,math.floor((self.width or 336)/(size*0.5)))
+    local lines=0
+    for line in ((self.text or "").."\n"):gmatch("(.-)\n") do
+        local characters=#(line:gsub("[\128-\191]", ""))
+        lines=lines+math.max(1,math.ceil(characters/columns))
+    end
+    local height=lines*(size+4)+math.max(0,lines-1)*(self.spacing or 0)
     if self.fontString and self.height and self.height>0 then return math.min(height,self.height) end
     return height
 end
@@ -203,6 +211,7 @@ for _, name in ipairs({"SetClampedToScreen", "SetFrameStrata", "SetMovable", "En
     "SetWordWrap", "SetSpacing", "SetNormalTexture", "SetPushedTexture", "SetDisabledTexture",
     "SetHighlightTexture", "SetResizable", "SetAtlas", "SetTexCoord", "SetMinMaxValues", "SetValueStep", "SetObeyStepOnDrag", "SetShadowColor", "SetShadowOffset"}) do Methods[name] = function() end end
 function Methods:SetTextColor(...) self.textColor={...} end
+function Methods:SetSpacing(value) self.spacing=value end
 function Methods:SetBackdrop(value) self.backdrop=value end
 function Methods:SetChecked(checked) self.checked=checked end
 function Methods:SetValue(value)
@@ -322,7 +331,7 @@ equal(ns.Window.body.fontSize,14,"initial body font is two steps smaller")
 equal(ns.Window.title.fontSize,16,"header title remains two units larger")
 local historyBeforeFont=#ns.db.history
 ns.Window.body:SetText(string.rep("Un relato suficientemente largo para necesitar desplazamiento. ",30))
-ns.Window.scroll.dynamicRange=true;ns.Window.scroll.viewportHeight=60
+ns.Window.scroll.dynamicRange=true;ns.Window.scroll.viewportHeight=ns.Window.frame:GetHeight()-ns.Window.HEADER_HEIGHT-ns.Window.CONTENT_TOP-ns.Window.FOOTER_HEIGHT
 ns.Window:SetFontSize(16)
 ns.Window.scroll:SetVerticalScroll(ns.Window.scroll:GetVerticalScrollRange()/2)
 ns.Options.slider:SetValue(15)
@@ -361,7 +370,9 @@ equal(ns.Window.currentID,13,"native selection hook updates displayed quest")
 QuestMapFrame.DetailsFrame:Hide();tracked=99;emit("SUPER_TRACKING_CHANGED");tick(0.2)
 equal(ns.Window.currentID,99,"closing details returns to actual tracked quest")
 check(ns.Window.body.text:find("cultivos",1,true),"unknown quest has context")
-QuestLore_Scroll(1);check(ns.Window.scroll:GetVerticalScroll()>0,"bindable scroll works")
+QuestLore_Scroll(1);equal(ns.Window.scroll:GetVerticalScroll(),0,"short readable quest cannot scroll into blank space")
+ns.Window:Render({key="scroll-test",id=99,title="Relato extenso",body=string.rep("Un relato largo debe poder leerse hasta su última línea. ",30),kind="story",source=""})
+QuestLore_Scroll(1);check(ns.Window.scroll:GetVerticalScroll()>0,"bindable scroll works for real overflowing text")
 tracked=12;emit("SUPER_TRACKING_CHANGED");tick(0.2)
 equal(ns.Window.scroll:GetVerticalScroll(),0,"changing quest resets scrolling")
 
@@ -1110,3 +1121,8 @@ fakePolestar.On=oldOn
 disabled.PolestarBridge:SetEnabled(false)
 Polestar=previousPolestar
 print("PASS: direct Polestar targets, per-character toggle, one subscription/ticker, late load, strict priority, missed events, acceptance guards, removal, native fallback and API failures")
+
+assert(loadfile(root.."/tests/layout.lua"))()({
+    login=loginCharacter, tick=tick, object=object,
+    setQuest=function() tracked=13;QuestMapFrame.DetailsFrame:Hide() end,
+})

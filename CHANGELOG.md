@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.15.4
+
+- Centralize complete text measurement and derive overflow from the current frame height and actual content geometry.
+- Clamp scrolling against the measured content/viewport range instead of a possibly stale native range cache.
+- Preserve reading position across font changes and the tracker's later height adjustment.
+- Recheck layout once after geometry changes settle; prevent stable rechecks from repeatedly dirtying the host.
+- Guard against the native template showing an unnecessary scrollbar, and allow unlimited wrapped title/body lines.
+- Add 590 geometry cases covering all 12–24 font sizes, widths, available heights, ES/EN text, paragraphs, long tokens, minimized restore, detached resize, and delayed native scroll ranges.
+- Replace the old fixed-range test assumption with independently derived viewport bounds, checking that the last line remains reachable.
+
 ## 0.15.3
 
 - Fix narrative ellipsis/clipping without a scrollbar after the 0.15.2 text-height change.

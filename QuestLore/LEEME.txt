@@ -1,0 +1,61 @@
+QuestLore 0.14.0 — El hilo de la misión
+WoW: Forever · interfaz 16001 · español neutro / English
+
+Copia esta carpeta en _forever_/Interface/AddOns/QuestLore.
+Si actualizas una instalación existente, usa /reload.
+
+Opciones → AddOns → QuestLore:
+- Idioma: Automático, Español o English.
+- Automático usa español si el cliente está en español; en los demás, inglés.
+- Tamaño del texto de 12 a 24 con vista previa.
+- Adjuntar al final del rastreador de misiones (requiere ForeverCore).
+  Sigue la columna y su ancho; al desactivarlo restaura la posición y el
+  tamaño independientes. Durante combate, el cambio espera a que termine.
+  Lore se adjunta por defecto; una preferencia de separarlo se conserva.
+Todo se guarda por personaje.
+
+La cabecera dice Lore, el título del relato es amarillo y el resumen blanco.
+El fondo es transparente y el control de minimizar usa el estilo del rastreador.
+El relato usa todo el ancho del texto; la barra solo ocupa espacio si hace falta.
+
+En modo independiente, arrastra la cabecera para mover la ventana y la esquina inferior derecha
+para cambiar sus dimensiones. El único botón de la cabecera minimiza o
+restaura. ESC no cierra la ventana. La rueda desplaza los textos largos.
+
+La ventana sigue la misión activa, sin paginado ni indicadores de historial.
+Consulta los relatos anteriores en Opciones → AddOns → QuestLore → Historial,
+o pulsa Ver historial en el panel principal. Selecciona un título de la lista
+para leerlo sin cambiar el relato de la misión activa.
+El historial conserva hasta 200 entradas únicas por personaje.
+Cada misión tiene una página: volver a seleccionarla abre la existente,
+sin duplicarla ni cambiar su primera posición. Al actualizar, las visitas
+repetidas antiguas se unen conservando la versión más reciente del relato.
+
+La introducción integra raza y clase en un solo relato y está en ambos idiomas.
+Aparece al comienzo, con un personaje de nivel 1 sin misiones. Una vez iniciada
+la aventura, no reaparece automáticamente al vaciarse el diario; sigue siendo
+accesible desde el historial.
+
+/lore                 Mostrar la ventana
+/lore reset           Restablecer la posición
+/lore actualizar      Reintentar la carga de la misión
+/lore fuente 14       Ajustar el texto por comando
+
+Revisión 0.13.1: releídos los 5259 relatos en ambos idiomas y las 90
+introducciones bilingües. Corregidos 400 resúmenes y tres combinaciones de
+introducción: redacción, contexto narrativo y límites de información conocida
+al recibir la misión, sin anticipar resultados posteriores de la cadena.
+
+Cobertura actual: 5259 resúmenes en español neutro e inglés.
+Catálogo completo sin filtro de nivel, incluidas las nuevas misiones de Forever:
+5413 registros auditados, 5259 relatos bilingües, 154 exclusiones documentadas
+con evidencia y 0 pendientes de redacción. Incluye clases, profesiones,
+mazmorras, bandas, eventos, repetibles y ofertas automáticas.
+El alcance combina 5410 registros instalados con tres registros públicos
+suplementarios cuya disponibilidad actual no está verificada. Cada fuente
+histórica o limitación se documenta en la auditoría por ID.
+Si falta una traducción, aparece un aviso en el idioma elegido.
+No utiliza IA ni servicios de traducción durante el juego.
+
+Cambios probados en un entorno simulado de Lua 5.1. La apariencia de los
+controles nuevos requiere comprobación dentro de WoW: Forever.

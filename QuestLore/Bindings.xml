@@ -1,0 +1,20 @@
+<Bindings>
+    <Binding name="QUESTLORE_TOGGLE" header="QUESTLORE">
+        QuestLore_Toggle();
+    </Binding>
+    <Binding name="QUESTLORE_SCROLL_UP">
+        QuestLore_Scroll(-1);
+    </Binding>
+    <Binding name="QUESTLORE_SCROLL_DOWN">
+        QuestLore_Scroll(1);
+    </Binding>
+    <Binding name="QUESTLORE_HISTORY">
+        QuestLore_History();
+    </Binding>
+    <Binding name="QUESTLORE_FONT_SMALLER">
+        QuestLore_FontSize(-1);
+    </Binding>
+    <Binding name="QUESTLORE_FONT_LARGER">
+        QuestLore_FontSize(1);
+    </Binding>
+</Bindings>

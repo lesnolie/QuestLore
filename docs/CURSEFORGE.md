@@ -40,7 +40,7 @@ QuestLore is open source under the MIT License. World of Warcraft and its underl
 
 - Avatar: `media/questlore-icon-400.png`, exactly 400×400 PNG.
 - Original generated image: `media/questlore-icon-original.png`.
-- Upload archive: `dist/QuestLore-0.15.4.zip` from the GitHub release.
+- Upload archive: `dist/QuestLore-0.15.5.zip` from the GitHub release.
 - Source: https://github.com/mexiar/QuestLore
 - Issues: https://github.com/mexiar/QuestLore/issues
 - License selection: MIT License.

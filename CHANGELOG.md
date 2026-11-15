@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.15.5
+
+- Match the quest title font size to the narrative text size while preserving its yellow color. Both follow the text-size option.
+
 ## 0.15.4
 
 - Centralize complete text measurement and derive overflow from the current frame height and actual content geometry.

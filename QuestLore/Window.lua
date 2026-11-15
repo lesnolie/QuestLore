@@ -134,7 +134,7 @@ function Window:SetFontSize(value)
     local range = self.scrollRange or 0
     self.pendingScrollFraction = range > 0 and math.max(0, math.min(1, self.scroll:GetVerticalScroll() / range)) or 0
     ns.db.fontSize = value
-    self.title:SetFont(self.fontName, value + 2, "")
+    self.title:SetFont(self.fontName, value, "")
     self.body:SetFont(self.fontName, value, "")
     self.body:SetSpacing(math.max(2, math.floor(value / 4)))
     self:Layout()

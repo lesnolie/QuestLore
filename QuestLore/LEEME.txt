@@ -1,4 +1,4 @@
-QuestLore 0.15.4 — El hilo de la misión
+QuestLore 0.15.5 — El hilo de la misión
 WoW: Forever · interfaz 16001 · español neutro / English
 
 Copia esta carpeta en _forever_/Interface/AddOns/QuestLore.
@@ -20,6 +20,7 @@ Opciones → AddOns → QuestLore:
 Todo se guarda por personaje.
 
 La cabecera dice Lore, el título del relato es amarillo y el resumen blanco.
+El título y el resumen usan el mismo tamaño de texto configurado en las opciones.
 El fondo es transparente y el control de minimizar usa el estilo del rastreador.
 El relato usa todo el ancho del texto; la barra solo ocupa espacio si hace falta.
 La altura del texto es automática para evitar recortes con puntos suspensivos.

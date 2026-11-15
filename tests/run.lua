@@ -328,7 +328,7 @@ equal(#ns.db.history,1,"actual displayed summary persisted")
 check(ns.Window.back==nil and ns.Window.forward==nil and ns.Window.status==nil and ns.Window.footer==nil,"main Lore has no history controls or pagination")
 
 equal(ns.Window.body.fontSize,14,"initial body font is two steps smaller")
-equal(ns.Window.title.fontSize,16,"header title remains two units larger")
+equal(ns.Window.title.fontSize,14,"quest title matches narrative size")
 local historyBeforeFont=#ns.db.history
 ns.Window.body:SetText(string.rep("Un relato suficientemente largo para necesitar desplazamiento. ",30))
 ns.Window.scroll.dynamicRange=true;ns.Window.scroll.viewportHeight=ns.Window.frame:GetHeight()-ns.Window.HEADER_HEIGHT-ns.Window.CONTENT_TOP-ns.Window.FOOTER_HEIGHT
@@ -337,7 +337,7 @@ ns.Window.scroll:SetVerticalScroll(ns.Window.scroll:GetVerticalScrollRange()/2)
 ns.Options.slider:SetValue(15)
 equal(ns.db.fontSize,15,"A- immediately reduces and saves font size")
 equal(ns.Window.body.fontSize,15,"A- updates the actual narrative font")
-equal(ns.Window.title.fontSize,17,"title follows resized body")
+equal(ns.Window.title.fontSize,15,"title matches resized body")
 local range=ns.Window.scroll:GetVerticalScrollRange()
 check(range>0 and math.abs(ns.Window.scroll:GetVerticalScroll()/range-0.5)<0.001,"font reflow preserves proportional reading position")
 ns.Options.slider:SetValue(16)
@@ -687,7 +687,7 @@ assert(categories[1].name=="QuestLore" and categories[1].panel==ns.Options.panel
 assert(ns.Options.slider.Low.text=="12" and ns.Options.slider.High.text=="24")
 local optionHistory=#other.db.history
 other.Options.slider:SetValue(21)
-assert(other.db.fontSize==21 and other.Window.body.fontSize==21 and other.Window.title.fontSize==23)
+assert(other.db.fontSize==21 and other.Window.body.fontSize==21 and other.Window.title.fontSize==21)
 assert(other.Options.preview.fontSize==21 and other.Options.value.text=="Tamaño del texto: 21")
 other.Options.slider:SetValue(15.6)
 assert(other.db.fontSize==16 and other.Options.slider.value==16,"slider rounds to whole steps without recursion")

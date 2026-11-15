@@ -26,7 +26,7 @@ Language, font size, attachment preference, detached position and size, visibili
 
 ## Installation
 
-1. Download `QuestLore-0.15.5.zip` from Releases.
+1. Download `QuestLore-0.15.6.zip` from Releases.
 2. Extract the **QuestLore** folder into `_forever_/Interface/AddOns/`.
 3. Check that `Interface/AddOns/QuestLore/QuestLore.toc` exists, without a second nested QuestLore folder.
 4. Enable QuestLore in the game's addon list. Restart the client for a new installation; use `/reload` when updating an existing installation.

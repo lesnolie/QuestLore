@@ -612,7 +612,7 @@ fresh.Window:Render({key="ui-long",title="Un título largo para consultar en la 
 assert(fresh.Window.scroll.ScrollBar:IsShown(),"overflow must restore scrollbar")
 assert(fresh.Window.fontDown==nil and fresh.Window.fontUp==nil and fresh.Window.close==nil,"header only has minimize")
 assert(fresh.Window.minimize:GetWidth()==24 and fresh.Window.minimize:GetHeight()==24)
-assert(fresh.Window.minimize.point[1]=="RIGHT" and fresh.Window.minimize.point[2]==fresh.Window.header and fresh.Window.minimize.point[4]==0)
+assert(fresh.Window.minimize.point[1]=="RIGHT" and fresh.Window.minimize.point[2]==fresh.Window.header and fresh.Window.minimize.point[4]==6)
 local visits=#fresh.db.history
 fresh.Window.minimize.scripts.OnClick()
 assert(fresh.db.minimized and fresh.Window.frame:GetHeight()==fresh.Window.HEADER_HEIGHT)

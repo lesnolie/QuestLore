@@ -304,7 +304,7 @@ function Window:Create()
     headerLabel:SetText("Lore"); shadow(headerLabel)
     self.headerLabel = headerLabel
     self.minimize = textButton(header, "QuestLoreMinimizeButton", "-", 16)
-    self.minimize:SetSize(24, 24); self.minimize:SetPoint("RIGHT", header, "RIGHT", 0, 0)
+    self.minimize:SetSize(24, 24); self.minimize:SetPoint("RIGHT", header, "RIGHT", 6, 0)
     self.minimize:SetScript("OnClick", function() self:SetMinimized(not ns.db.minimized) end)
     tooltip(self.minimize, function() return ns.L(ns.db.minimized and "Restaurar ventana" or "Minimizar ventana") end)
     if hasAtlas("ui-questtrackerbutton-secondary-collapse") then

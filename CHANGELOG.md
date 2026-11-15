@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.15.6
+
+- Move the Lore minimize/expand control six UI units right to align with the native quest header control.
+
 ## 0.15.5
 
 - Match the quest title font size to the narrative text size while preserving its yellow color. Both follow the text-size option.

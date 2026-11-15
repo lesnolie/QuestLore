@@ -19,6 +19,39 @@ function Tracker:Dirty()
     if container and type(container.MarkDirty) == "function" then container:MarkDirty() end
 end
 
+-- A sibling collapse can settle its anchors after the host's first pass.
+-- Watch the space below our own header and request one deferred host reflow;
+-- never resize native sections or use a permanent layout polling timer.
+function Tracker:QueueReflow()
+    if not self.active or self.reflowQueued then return end
+    self.reflowQueued = true
+    C_Timer.After(0, function()
+        self.reflowQueued = false
+        if not self.active then return end
+        if inCombat() then self.pending = true; return end
+        self:Dirty()
+    end)
+end
+
+function Tracker:WatchSpace(enabled)
+    if enabled then
+        if not self.spaceProbe then
+            local probe = CreateFrame("Frame", "QuestLoreTrackerSpaceProbe", UIParent)
+            probe:Hide()
+            probe:SetScript("OnSizeChanged", function() self:QueueReflow() end)
+            self.spaceProbe = probe
+        end
+        self.spaceProbe:ClearAllPoints()
+        self.spaceProbe:SetPoint("TOPLEFT", self.proxy, "TOPLEFT", 0, 0)
+        self.spaceProbe:SetPoint("BOTTOMRIGHT", UIParent, "BOTTOMRIGHT", -24, 24)
+        self.spaceProbe:Show()
+        self:QueueReflow()
+    elseif self.spaceProbe then
+        self.spaceProbe:Hide()
+        self.spaceProbe:ClearAllPoints()
+    end
+end
+
 function Tracker:UpdateProxy(proxy, availableHeight)
     -- The host also freezes its layout in combat. Keep the last applied layout
     -- if a consumer invokes the proxy directly during that freeze.
@@ -28,8 +61,7 @@ function Tracker:UpdateProxy(proxy, availableHeight)
     local cap = math.max(0, tonumber(availableHeight) or 0)
     local minimum = window.HEADER_HEIGHT
     if not ns.db.minimized then
-        -- Keep room for both title and narrative under the header and above
-        -- navigation. Less space would overlap controls and expose no story.
+        -- Keep room for both title and narrative below the fixed header.
         minimum = minimum + window.CONTENT_TOP + window.FOOTER_HEIGHT
             + 2 * ((tonumber(ns.db.fontSize) or window.DEFAULT_FONT) + 8)
     end
@@ -96,8 +128,10 @@ function Tracker:Changed()
         window.frame:ClearAllPoints()
         window.frame:SetPoint("TOPLEFT", self.proxy, "TOPLEFT", 0, 0)
         window.grip:Hide()
+        self:WatchSpace(true)
     elseif not wanted and self.active then
         self.active = false
+        self:WatchSpace(false)
         ns.Window.frame:SetParent(UIParent)
         ns.Window:RestoreDetachedLayout()
         self.proxy.contentsHeight, self.proxy.truncated = 0, false

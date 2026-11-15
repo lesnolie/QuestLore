@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.15.2
+
+- Reflow attached Lore after sibling tracker sections move or collapse, reclaiming released space once their anchors settle.
+- Measure desired section height from full-width text instead of the previous scrollbar-wrapped content.
+- Round measured text heights up to whole UI units and size text regions explicitly to avoid clipping at fit boundaries.
+- Keep the scrollbar only when the full narrative exceeds the space allocated by the host.
+- Observe geometry with an addon-owned probe and coalesced deferred reflow; no additional layout polling timer.
+- Test crowded-to-expanded tracker transitions, gutter recovery, stable repeated passes, detachment, and combat deferral.
+
 ## 0.15.1
 
 - Keep Polestar's accepted quest authoritative while following is enabled, including when the game selects a newly accepted side quest.

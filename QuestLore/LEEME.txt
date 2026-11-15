@@ -1,4 +1,4 @@
-QuestLore 0.15.1 — El hilo de la misión
+QuestLore 0.15.2 — El hilo de la misión
 WoW: Forever · interfaz 16001 · español neutro / English
 
 Copia esta carpeta en _forever_/Interface/AddOns/QuestLore.
@@ -22,6 +22,8 @@ Todo se guarda por personaje.
 La cabecera dice Lore, el título del relato es amarillo y el resumen blanco.
 El fondo es transparente y el control de minimizar usa el estilo del rastreador.
 El relato usa todo el ancho del texto; la barra solo ocupa espacio si hace falta.
+Al minimizar otras secciones, Lore recalcula el espacio libre y recupera el alto
+que necesita. Este ajuste observa cambios de tamaño y no añade otro temporizador.
 
 En modo independiente, arrastra la cabecera para mover la ventana y la esquina inferior derecha
 para cambiar sus dimensiones. El único botón de la cabecera minimiza o

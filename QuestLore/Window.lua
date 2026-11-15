@@ -61,11 +61,13 @@ function Window:Layout()
         self.content:SetWidth(width)
         self.title:SetWidth(width)
         self.body:SetWidth(width)
-        local titleHeight = self.title:GetStringHeight()
+        local titleHeight = math.ceil(self.title:GetStringHeight())
         self.title:SetHeight(titleHeight)
         self.body:ClearAllPoints()
         self.body:SetPoint("TOPLEFT", self.content, "TOPLEFT", 0, -titleHeight - 8)
-        local height = titleHeight + 8 + self.body:GetStringHeight() + 6
+        local bodyHeight = math.ceil(self.body:GetStringHeight())
+        self.body:SetHeight(bodyHeight)
+        local height = titleHeight + 8 + bodyHeight + 6
         self.content:SetHeight(height)
         return height
     end
@@ -73,6 +75,7 @@ function Window:Layout()
     -- controls' gutter if the text overflows at full width; this first pass
     -- also keeps wrapping stable around the scrollbar threshold.
     local height = measure(math.max(1, self.frame:GetWidth() - 16))
+    self.naturalContentHeight = height
     self.needsScroll = height > viewport + 0.5
     if self.needsScroll then measure(math.max(1, self.frame:GetWidth() - 40)) end
     self.scroll:ClearAllPoints()
@@ -174,7 +177,7 @@ end
 
 function Window:GetDesiredAttachedHeight()
     if ns.db.minimized then return self.HEADER_HEIGHT end
-    return self.HEADER_HEIGHT + self.CONTENT_TOP + self.content:GetHeight() + self.FOOTER_HEIGHT
+    return self.HEADER_HEIGHT + self.CONTENT_TOP + (self.naturalContentHeight or self.content:GetHeight()) + self.FOOTER_HEIGHT
 end
 
 function Window:SetAttachedLayout(width, height)

@@ -854,7 +854,42 @@ bridgeRoom=30;host:MarkDirty();tick(0.2)
 assert(dock.Tracker.proxy:GetContentsHeight()==0 and not dock.Window.frame:IsVisible(),"insufficient tracker space hides the section instead of overlapping title and footer")
 bridgeRoom=400;host:MarkDirty();tick(0.2)
 assert(dock.Window.frame:IsVisible(),"lore returns when the tracker has room")
+-- A long quest list constrains Lore; collapsing it releases room after
+-- sibling anchors settle. The probe queues a second host pass without polling.
+local previousBody=dock.Window.body.text
+local previousTitle=dock.Window.title.text
+local stableKey=dock.Window.currentKey
+dock.Window:Render({key=stableKey,id=dock.Window.currentID,title="Paciencia",body=string.rep("Los informes necesitan llegar a su destino. ",9),kind="story",source=""})
+bridgeRoom=140;host:MarkDirty();tick(0.2)
+assert(dock.Window.needsScroll and dock.Window.scroll.ScrollBar:IsShown(),"crowded tracker can still scroll a genuinely clipped story")
+local natural=dock.Window.naturalContentHeight
+assert(dock.Window:GetDesiredAttachedHeight()==dock.Window.HEADER_HEIGHT+dock.Window.CONTENT_TOP+natural+dock.Window.FOOTER_HEIGHT,"attached desired size uses full-width text instead of scrollbar-wrapped content")
+local probe=dock.Tracker.spaceProbe
+assert(probe and probe:IsShown(),"attached section observes space changes through an addon-owned probe")
+bridgeRoom=500
+probe.scripts.OnSizeChanged(probe,300,500)
+probe.scripts.OnSizeChanged(probe,300,500)
+assert(dock.Tracker.reflowQueued,"sibling movement queues one deferred reflow")
+tick(0.2)
+assert(not dock.Window.needsScroll and not dock.Window.scroll.ScrollBar:IsShown(),"collapsing sibling quests restores full narrative and hides scrollbar")
+assert(dock.Window.body:GetWidth()==bridgeWidth-16,"released scrollbar gutter returns to the narrative")
+assert(dock.Window.frame:GetHeight()==dock.Window:GetDesiredAttachedHeight(),"unconstrained section grows exactly to full narrative height")
+assert(dock.Window.scroll:GetVerticalScroll()==0,"reclaiming space clears obsolete scrolling")
+local tallHeight=dock.Window.frame:GetHeight()
+for i=1,5 do host:MarkDirty();tick(0.2) end
+assert(dock.Window.frame:GetHeight()==tallHeight and not dock.Window.needsScroll,"repeated host passes converge without scroll-width feedback")
+combat=true
+bridgeRoom=140
+probe.scripts.OnSizeChanged(probe,300,140);tick(0.2)
+assert(dock.Tracker.pending and dock.Window.frame:GetHeight()==tallHeight,"space changes during combat leave the shared layout untouched")
+combat=false
+dock.Tracker.events.scripts.OnEvent(dock.Tracker.events,"PLAYER_REGEN_ENABLED");tick(0.2)
+assert(dock.Window.needsScroll,"combat-deferred space restriction applies after combat")
+bridgeRoom=500;probe.scripts.OnSizeChanged(probe,300,500);tick(0.2)
+assert(not dock.Window.needsScroll,"released space removes scrolling again after combat")
+dock.Window:Render({key=stableKey,id=dock.Window.currentID,title=previousTitle,body=previousBody,kind="story",source=""})
 dock.Tracker:SetAttached(false);tick(0.2)
+assert(not dock.Tracker.spaceProbe:IsShown(),"detached window stops observing shared-column space")
 local lateAPI=ForeverTrackerHost
 ForeverTrackerHost=nil
 local late=loginCharacter({attachToTracker=true});tick(0.2)

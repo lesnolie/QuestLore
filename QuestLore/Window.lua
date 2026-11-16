@@ -165,6 +165,18 @@ function Window:Layout()
     end
 end
 
+function Window:UpdateResizeIndicator(inside)
+    if not self.grip then return end
+    if inside==nil then
+        inside=MouseIsOver and MouseIsOver(self.frame) or false
+    end
+    self.hovered=inside==true
+    local visible=not self.attachedLayout and not ns.db.minimized and (self.hovered or self.resizing)
+    -- Keep the transparent hit region active so moving onto the corner also
+    -- reveals it; attached/minimized windows still hide the button entirely.
+    self.grip:SetAlpha(visible and 1 or 0)
+end
+
 function Window:FinishResize()
     if not self.resizing then return end
     self.frame:StopMovingOrSizing()
@@ -175,6 +187,7 @@ function Window:FinishResize()
     end
     self:SavePosition()
     self:Layout()
+    self:UpdateResizeIndicator()
 end
 
 function Window:SetFontSize(value)
@@ -237,6 +250,7 @@ function Window:SetMinimized(value, initial)
         self:UpdateMinimizeButton()
     end
     self:Layout()
+    self:UpdateResizeIndicator()
     if not initial and ns.ready then ns.QueueRefresh() end
 end
 
@@ -264,6 +278,7 @@ function Window:SetAttachedLayout(width, height)
     self.frame:SetSize(width, ns.db.minimized and self.HEADER_HEIGHT or self.expandedHeight)
     self.applyingSize = false
     self.grip:Hide()
+    self:UpdateResizeIndicator(false)
     self:Layout()
     self:QueueLayout()
     self.applyingAttachedLayout = false
@@ -285,6 +300,7 @@ function Window:RestoreDetachedLayout()
     else self:ResetPosition() end
     self.applyingSize = false
     if not ns.db.minimized then self.grip:Show() end
+    self:UpdateResizeIndicator()
     self:Layout()
     self:QueueLayout()
     self.applyingAttachedLayout = false
@@ -431,19 +447,31 @@ function Window:Create()
             frame:ClearAllPoints(); frame:SetPoint("TOPLEFT", UIParent, "BOTTOMLEFT", left, top)
         end
         self.resizing = true
+        self:UpdateResizeIndicator(true)
         frame:StartSizing("BOTTOMRIGHT")
     end)
     grip:SetScript("OnMouseUp", function() self:FinishResize() end)
     grip:SetScript("OnHide", function() self:FinishResize() end)
     self.grip = grip
+    grip:SetAlpha(0)
+    local function watch(region)
+        if not region then return end
+        region:HookScript("OnEnter",function() self:UpdateResizeIndicator(true) end)
+        region:HookScript("OnLeave",function() self:UpdateResizeIndicator() end)
+    end
+    watch(frame);watch(header);watch(scroll);watch(content);watch(self.minimize);watch(grip)
+    if scroll.ScrollBar then
+        watch(scroll.ScrollBar)
+        watch(scroll.ScrollBar.ScrollUpButton);watch(scroll.ScrollBar.ScrollDownButton)
+    end
     frame:SetScript("OnSizeChanged", function(_, _, height)
         if self.applyingSize then return end
         if not ns.db.minimized then self.expandedHeight = height end
         self:Layout()
         self:QueueLayout()
     end)
-    frame:SetScript("OnShow", function() if ns.ready then ns.QueueRefresh() end end)
-    frame:SetScript("OnHide", function() self:FinishResize() end)
+    frame:SetScript("OnShow", function() self:UpdateResizeIndicator(); if ns.ready then ns.QueueRefresh() end end)
+    frame:SetScript("OnHide", function() self:FinishResize();self:UpdateResizeIndicator(false) end)
     self:SetFontSize(ns.db.fontSize)
     self:SetMinimized(ns.db.minimized, true)
 end

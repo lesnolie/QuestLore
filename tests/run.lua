@@ -189,6 +189,7 @@ function Methods:GetStringWidth()
     return self.width and self.width>0 and math.min(width,self.width) or width
 end
 function Methods:SetEnabled(enabled) self.enabled = enabled end
+function Methods:SetAlpha(value) self.alpha=value end
 function Methods:SetFont(font,size,flags) self.fontName,self.fontSize,self.fontFlags=font,size,flags end
 function Methods:GetFont() return "Interface/Fonts/FRIZQT__.TTF", 14, "" end
 function Methods:GetStringHeight()
@@ -239,6 +240,8 @@ function Methods:CreateTexture() return object(self) end
 UIParent = object()
 UIParent:SetSize(1920,1080)
 GameFontNormal = object()
+GameTooltip = object()
+function GameTooltip:SetOwner(owner) self.owner=owner end
 UISpecialFrames, SlashCmdList = {}, {}
 local categories={}
 Settings={
@@ -640,11 +643,23 @@ print("PASS: clean header, aligned controls, short/long scrollbar, minimize/rest
 
 -- Resize via the actual grip handlers, then reload character-owned state.
 local window=fresh.Window
-assert(window.grip:IsVisible())
+assert(window.grip:IsVisible() and window.grip.alpha==0,"resize hit region starts with an invisible icon")
+local over=false
+MouseIsOver=function(frame) return over end
+window.frame.scripts.OnEnter()
+assert(window.grip.alpha==1,"hovering the window reveals resize icon")
+over=true;window.frame.scripts.OnLeave()
+assert(window.grip.alpha==1,"moving to a child inside the window keeps icon visible")
+over=false;window.scroll.scripts.OnLeave()
+assert(window.grip.alpha==0,"leaving the box hides resize icon")
+window.grip.scripts.OnEnter(window.grip)
+assert(window.grip.alpha==1,"hovering the transparent corner reveals it")
 window.grip.scripts.OnMouseDown(window.grip,"RightButton")
 assert(not window.resizing)
 window.grip.scripts.OnMouseDown(window.grip,"LeftButton")
 assert(window.resizing and window.frame.sizingCorner=="BOTTOMRIGHT")
+window.grip.scripts.OnLeave(window.grip)
+assert(window.grip.alpha==1,"resize icon remains visible when dragging outside the box")
 assert(window.frame.point[1]=="TOPLEFT")
 window.frame:SetSize(520,440)
 window.frame.scripts.OnSizeChanged(window.frame,520,440)
@@ -652,6 +667,7 @@ assert(window.body:GetWidth()==504 and window.expandedHeight==440)
 assert(fresh.db.size.width==380 and fresh.db.size.height==310,"save on release")
 window.grip.scripts.OnMouseUp()
 assert(not window.resizing and fresh.db.size.width==520 and fresh.db.size.height==440)
+assert(window.grip.alpha==0,"release outside hides resize icon")
 window:SetMinimized(true)
 assert(not window.grip:IsShown() and window.frame:GetHeight()==window:GetHeaderHeight())
 assert(fresh.db.size.height==440,"collapse cannot overwrite expanded dimensions")
@@ -939,7 +955,10 @@ local defaultAttached=loginCharacter(nil);tick(0.2)
 assert(defaultAttached.db.attachToTracker==true and defaultAttached.Tracker:IsAttached(),"attachment defaults to enabled")
 local detachedPreference=loginCharacter({attachToTracker=false});tick(0.2)
 assert(not detachedPreference.Tracker:IsAttached() and not detachedPreference.Options.attachment.checked,"explicit detached preference survives login")
-assert(not detachedPreference.Window.header.scripts.OnEnter,"Lore header has no title tooltip")
+GameTooltip:Hide()
+detachedPreference.Window.header.scripts.OnEnter(detachedPreference.Window.header)
+assert(not GameTooltip:IsShown(),"Lore header hover does not display a title tooltip")
+detachedPreference.Window.header.scripts.OnLeave(detachedPreference.Window.header)
 assert(detachedPreference.Window.back==nil and detachedPreference.Window.forward==nil and detachedPreference.Window.status==nil and detachedPreference.Window.footer==nil,"all pagination removed from main Lore")
 local opts=detachedPreference.Options
 assert(opts.historyPanel and opts.historyRows and opts.historyButton,"history is available in AddOns options")

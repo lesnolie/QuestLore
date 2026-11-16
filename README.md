@@ -20,7 +20,7 @@
 
 The transparent **Lore** section uses a yellow quest title and white narrative text. In the tracker and portrait layouts, the quest title and narrative use the same configured font size. Its only header control minimizes or restores the section. There are no page arrows, history counters, Current button, or title tooltip in the live window. Escape leaves Lore open.
 
-Lore attaches below the quest list by default when **ForeverCore** exposes its shared tracker API. It follows the tracker width and visibility. You can detach it in the options, then drag the header to move it or the lower-right corner to resize it. Long narratives scroll; the scrollbar disappears when the text fits. Collapsing other tracker sections triggers a deferred reflow so Lore can reclaim the released space. Its desired height is measured at the full text width, independently of the previous scrollbar gutter. Text is measured without stale height constraints so the full narrative remains available instead of ending in an ellipsis. Attachment changes requested during combat wait until combat ends.
+Lore attaches below the quest list by default when **ForeverCore** exposes its shared tracker API. It follows the tracker width and visibility. You can detach it in the options, then drag the header to move it or the lower-right corner to resize it. The resize icon appears only while hovering the detached window and stays visible during resizing. Long narratives scroll; the scrollbar disappears when the text fits. Collapsing other tracker sections triggers a deferred reflow so Lore can reclaim the released space. Its desired height is measured at the full text width, independently of the previous scrollbar gutter. Text is measured without stale height constraints so the full narrative remains available instead of ending in an ellipsis. Attachment changes requested during combat wait until combat ends.
 
 Language, font size, attachment preference, detached position and size, visibility, minimized state, and history are saved per character. Existing explicit detachment settings are respected.
 
@@ -38,7 +38,7 @@ This layout is useful above action bars or across the top of the screen. Making 
 
 ## Installation
 
-1. Download `QuestLore-0.16.0.zip` from Releases.
+1. Download `QuestLore-0.16.1.zip` from Releases.
 2. Extract the **QuestLore** folder into `_forever_/Interface/AddOns/`.
 3. Check that `Interface/AddOns/QuestLore/QuestLore.toc` exists, without a second nested QuestLore folder.
 4. Enable QuestLore in the game's addon list. Restart the client for a new installation; use `/reload` when updating an existing installation.

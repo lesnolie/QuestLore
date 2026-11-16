@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.16.1
+
+- Show the detached resize icon only while hovering the window, keeping it visible throughout an active resize drag. No hover polling timer is added.
+
 ## 0.16.0
 
 - Add an automatic horizontal layout when detached Lore is wider than its expanded height.

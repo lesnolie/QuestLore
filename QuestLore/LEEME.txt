@@ -1,4 +1,4 @@
-QuestLore 0.15.6 — El hilo de la misión
+QuestLore 0.16.0 — El hilo de la misión
 WoW: Forever · interfaz 16001 · español neutro / English
 
 Copia esta carpeta en _forever_/Interface/AddOns/QuestLore.
@@ -20,7 +20,9 @@ Opciones → AddOns → QuestLore:
 Todo se guarda por personaje.
 
 La cabecera dice Lore, el título del relato es amarillo y el resumen blanco.
-El título y el resumen usan el mismo tamaño de texto configurado en las opciones.
+El título y el resumen usan el mismo tamaño configurado en el diseño vertical
+y en el rastreador. En el diseño horizontal, el título usa la tipografía nativa
+de la cabecera Lore.
 El fondo es transparente y el control de minimizar usa el estilo del rastreador.
 El relato usa todo el ancho del texto; la barra solo ocupa espacio si hace falta.
 La altura del texto es automática para evitar recortes con puntos suspensivos.
@@ -30,6 +32,15 @@ que necesita. Este ajuste observa cambios de tamaño y no añade otro temporizad
 En modo independiente, arrastra la cabecera para mover la ventana y la esquina inferior derecha
 para cambiar sus dimensiones. El único botón de la cabecera minimiza o
 restaura. ESC no cierra la ventana. La rueda desplaza los textos largos.
+
+Diseño horizontal: separa Lore del rastreador y haz la caja más ancha que alta.
+El nombre de la misión pasa a la cabecera, centrado, y el resumen queda
+justificado (la última línea de cada párrafo se alinea a la izquierda).
+Puedes hacer una franja baja y muy ancha, sin un máximo de ancho impuesto
+por el addon, para colocarla arriba de las barras de acción o en la parte
+superior de la pantalla. Se conserva al minimizar y al recargar el personaje.
+Al hacer la caja cuadrada/vertical o volver a adjuntarla, regresa el diseño
+habitual. Si falta espacio, el resumen completo sigue disponible con scroll.
 
 La ventana sigue la misión activa, sin paginado ni indicadores de historial.
 Consulta los relatos anteriores en Opciones → AddOns → QuestLore → Historial,

@@ -70,12 +70,61 @@ function Window:QueueLayout()
     end)
 end
 
+function Window:GetHeaderHeight()
+    return self.headerHeight or self.HEADER_HEIGHT
+end
+
+function Window:ApplyPresentation(width, height)
+    self.wideLayout = not self.attachedLayout and width > height
+    local label = self.headerLabel
+    label:ClearAllPoints()
+    label:SetHeight(0)
+    if self.wideLayout then
+        label:SetPoint("LEFT",self.header,"LEFT",32,0)
+        label:SetPoint("RIGHT",self.header,"RIGHT",-32,0)
+        label:SetWidth(math.max(1,width-64))
+        label:SetJustifyH("CENTER")
+        label:SetText(self.currentTitle or "Lore")
+        self.headerHeight=math.max(self.HEADER_HEIGHT,math.ceil(label:GetStringHeight())+4)
+        self.title:Hide();self.body:Hide()
+        if self.headerArt then self.headerArt:Hide();self.wideDivider:Show() end
+    else
+        label:SetPoint("LEFT",7,0);label:SetPoint("RIGHT",-26,0)
+        label:SetWidth(math.max(1,width-33))
+        label:SetJustifyH("LEFT");label:SetText("Lore")
+        self.headerHeight=self.HEADER_HEIGHT
+        self.title:Show();self.body:Show();self.justified:Hide()
+        if self.headerArt then self.headerArt:Show();self.wideDivider:Hide() end
+    end
+    self.header:SetHeight(self.headerHeight)
+    if not ns.db.minimized and not self.attachedLayout then
+        -- A wrapped header still leaves at least one readable body line.
+        local minimum=math.max(self.minHeight,self.headerHeight+self.CONTENT_TOP+self.FOOTER_HEIGHT+math.ceil(ns.db.fontSize*1.5)+6)
+        local applying=self.applyingSize;self.applyingSize=true
+        self.frame:SetResizeBounds(self.minWidth,minimum,self.maxWidth,self.maxHeight)
+        if height<minimum then self.frame:SetHeight(minimum);self.expandedHeight=minimum end
+        self.applyingSize=applying
+    end
+    if ns.db.minimized and self.frame:GetHeight()~=self.headerHeight then
+        local applying=self.applyingSize;self.applyingSize=true
+        self.frame:SetResizeBounds(self.attachedLayout and 1 or self.minWidth,self.headerHeight,self.maxWidth,self.maxHeight)
+        self.frame:SetHeight(self.headerHeight);self.applyingSize=applying
+    end
+    return ns.db.minimized and self.expandedHeight or self.frame:GetHeight()
+end
+
 function Window:MeasureContent(width)
     self.content:SetWidth(width)
     self.title:SetWidth(width)
     self.body:SetWidth(width)
     self.title:SetHeight(0)
     self.body:SetHeight(0)
+    if self.wideLayout then
+        self.body:ClearAllPoints();self.body:SetPoint("TOPLEFT",self.content,"TOPLEFT",0,0)
+        local height=self.justified:Layout(self.body:GetText() or "",width,ns.db.fontSize,math.max(2,math.floor(ns.db.fontSize/4)))+6
+        self.content:SetHeight(height)
+        return height
+    end
     local titleHeight = math.ceil(self.title:GetStringHeight())
     self.title:SetHeight(titleHeight)
     self.body:ClearAllPoints()
@@ -91,7 +140,8 @@ function Window:Layout()
     local previousNatural, previousWidth = self.naturalContentHeight, self.layoutWidth
     local width = self.frame:GetWidth()
     local height = ns.db.minimized and self.expandedHeight or self.frame:GetHeight()
-    local viewport = math.max(0, height - self.HEADER_HEIGHT - self.CONTENT_TOP - self.FOOTER_HEIGHT)
+    height=self:ApplyPresentation(width,height)
+    local viewport = math.max(0, height - self:GetHeaderHeight() - self.CONTENT_TOP - self.FOOTER_HEIGHT)
     self.layoutWidth, self.viewportHeight = width, viewport
     -- Decide fit at full width first. The scroll gutter must never influence
     -- the height requested from the host, or trap the layout in a narrow state.
@@ -101,7 +151,7 @@ function Window:Layout()
     local contentHeight = self.needsScroll and self:MeasureContent(math.max(1, width - 40)) or natural
     self.scrollRange = self.needsScroll and math.max(0, contentHeight - viewport) or 0
     self.scroll:ClearAllPoints()
-    self.scroll:SetPoint("TOPLEFT", 8, -self.HEADER_HEIGHT - self.CONTENT_TOP)
+    self.scroll:SetPoint("TOPLEFT", 8, -self:GetHeaderHeight() - self.CONTENT_TOP)
     self.scroll:SetPoint("BOTTOMRIGHT", self.needsScroll and -32 or -8, self.FOOTER_HEIGHT)
     if self.scroll.UpdateScrollChildRect then self.scroll:UpdateScrollChildRect() end
     local offset = self.scroll:GetVerticalScroll()
@@ -168,9 +218,9 @@ function Window:SetMinimized(value, initial)
     ns.db.minimized = value == true
     self.applyingSize = true
     self.frame:SetResizeBounds(self.attachedLayout and 1 or self.minWidth,
-        (ns.db.minimized or self.attachedLayout) and self.HEADER_HEIGHT or self.minHeight,
+        (ns.db.minimized or self.attachedLayout) and self:GetHeaderHeight() or self.minHeight,
         self.maxWidth, self.maxHeight)
-    self.frame:SetHeight(ns.db.minimized and self.HEADER_HEIGHT or self.expandedHeight)
+    self.frame:SetHeight(ns.db.minimized and self:GetHeaderHeight() or self.expandedHeight)
     self.applyingSize = false
     if left and top and not self.attachedLayout then
         self.frame:ClearAllPoints()
@@ -224,9 +274,9 @@ function Window:RestoreDetachedLayout()
     if self.frame.SetParent then self.frame:SetParent(UIParent) end
     local size = ns.db.size
     self.expandedHeight = size.height
-    self.frame:SetResizeBounds(self.minWidth, ns.db.minimized and self.HEADER_HEIGHT or self.minHeight,
+    self.frame:SetResizeBounds(self.minWidth, ns.db.minimized and self:GetHeaderHeight() or self.minHeight,
         self.maxWidth, self.maxHeight)
-    self.frame:SetSize(size.width, ns.db.minimized and self.HEADER_HEIGHT or self.expandedHeight)
+    self.frame:SetSize(size.width, ns.db.minimized and self:GetHeaderHeight() or self.expandedHeight)
     self.frame:ClearAllPoints()
     local position = ns.db.position
     if type(position) == "table" and type(position.x) == "number" and type(position.y) == "number" then
@@ -247,12 +297,13 @@ function Window:Create()
     end
     local frame = CreateFrame("Frame", "QuestLoreWindow", UIParent, "BackdropTemplate")
     frame:Hide()
-    self.maxWidth, self.maxHeight = math.max(160, UIParent:GetWidth() - 20), math.max(100, UIParent:GetHeight() - 20)
-    self.minWidth, self.minHeight = math.min(320, self.maxWidth), math.min(180, self.maxHeight)
+    local screenWidth=math.max(160,UIParent:GetWidth()-20)
+    self.maxWidth,self.maxHeight=nil,math.max(100,UIParent:GetHeight()-20)
+    self.minWidth,self.minHeight=math.min(320,screenWidth),math.min(80,self.maxHeight)
     local function dimension(value, fallback, low, high)
         value = tonumber(value) or fallback
-        if value ~= value then value = fallback end
-        return math.max(low, math.min(high, value))
+        if value ~= value or value==math.huge or value==-math.huge then value = fallback end
+        return math.max(low, high and math.min(high,value) or value)
     end
     local saved = type(ns.db.size) == "table" and ns.db.size or {}
     local width = dimension(saved.width, 380, self.minWidth, self.maxWidth)
@@ -303,6 +354,14 @@ function Window:Create()
     headerLabel:SetJustifyH("LEFT"); headerLabel:SetTextColor(unpack(palette.gold))
     headerLabel:SetText("Lore"); shadow(headerLabel)
     self.headerLabel = headerLabel
+    headerLabel:SetWordWrap(true)
+    if headerLabel.SetMaxLines then headerLabel:SetMaxLines(0) end
+    self.wideDivider=header:CreateTexture(nil,"BORDER")
+    self.wideDivider:SetColorTexture(0.65,0.46,0.12,0.75)
+    self.wideDivider:SetHeight(1)
+    self.wideDivider:SetPoint("BOTTOMLEFT",header,"BOTTOMLEFT",0,0)
+    self.wideDivider:SetPoint("BOTTOMRIGHT",header,"BOTTOMRIGHT",0,0)
+    self.wideDivider:Hide()
     self.minimize = textButton(header, "QuestLoreMinimizeButton", "-", 16)
     self.minimize:SetSize(24, 24); self.minimize:SetPoint("RIGHT", header, "RIGHT", 6, 0)
     self.minimize:SetScript("OnClick", function() self:SetMinimized(not ns.db.minimized) end)
@@ -357,6 +416,7 @@ function Window:Create()
     if body.SetMaxLines then body:SetMaxLines(0) end
     if body.SetNonSpaceWrap then body:SetNonSpaceWrap(true) end
     self.body = body
+    self.justified=ns.Justify.New(content,self.fontName)
 
     local grip = CreateFrame("Button", "QuestLoreResizeGrip", frame)
     grip:SetSize(20, 20); grip:SetPoint("BOTTOMRIGHT", -2, 2)

@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.16.0
+
+- Add an automatic horizontal layout when detached Lore is wider than its expanded height.
+- Replace the Lore header with the centered quest title using the native header font; remove the repeated content title in this mode.
+- Fully justify narrative paragraphs with a reusable word pool, keeping final paragraph lines left aligned and preserving long tokens.
+- Remove the addon-imposed maximum width and allow shallow windows, while leaving room for a readable line below wrapped headers.
+- Preserve the banner layout through minimize/restore and saved per-character dimensions; reattachment always restores the native tracker layout.
+- Add 312 horizontal layout cases alongside the 590 geometry cases and existing runtime suite.
+
 ## 0.15.6
 
 - Move the Lore minimize/expand control six UI units right to align with the native quest header control.

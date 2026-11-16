@@ -183,12 +183,17 @@ function Methods:GetParent() return self.parent end
 function Methods:GetEffectiveScale() return self.scale or 1 end
 function Methods:SetScale(value) self.scale=value end
 function Methods:SetText(t) self.text = t end
+function Methods:GetText() return self.text end
+function Methods:GetStringWidth()
+    local width=#((self.text or ""):gsub("[\128-\191]", ""))*(self.fontSize or 16)*0.5
+    return self.width and self.width>0 and math.min(width,self.width) or width
+end
 function Methods:SetEnabled(enabled) self.enabled = enabled end
 function Methods:SetFont(font,size,flags) self.fontName,self.fontSize,self.fontFlags=font,size,flags end
 function Methods:GetFont() return "Interface/Fonts/FRIZQT__.TTF", 14, "" end
 function Methods:GetStringHeight()
     local size=self.fontSize or 16
-    local columns=math.max(1,math.floor((self.width or 336)/(size*0.5)))
+    local columns=(self.wordWrap==false or self.width==0) and math.huge or math.max(1,math.floor((self.width or 336)/(size*0.5)))
     local lines=0
     for line in ((self.text or "").."\n"):gmatch("(.-)\n") do
         local characters=#(line:gsub("[\128-\191]", ""))
@@ -211,7 +216,9 @@ for _, name in ipairs({"SetClampedToScreen", "SetFrameStrata", "SetMovable", "En
     "SetWordWrap", "SetSpacing", "SetNormalTexture", "SetPushedTexture", "SetDisabledTexture",
     "SetHighlightTexture", "SetResizable", "SetAtlas", "SetTexCoord", "SetMinMaxValues", "SetValueStep", "SetObeyStepOnDrag", "SetShadowColor", "SetShadowOffset"}) do Methods[name] = function() end end
 function Methods:SetTextColor(...) self.textColor={...} end
+function Methods:SetJustifyH(value) self.justifyH=value end
 function Methods:SetSpacing(value) self.spacing=value end
+function Methods:SetWordWrap(value) self.wordWrap=value end
 function Methods:SetBackdrop(value) self.backdrop=value end
 function Methods:SetChecked(checked) self.checked=checked end
 function Methods:SetValue(value)
@@ -227,7 +234,7 @@ local function object(parent)
     return obj
 end
 function CreateFrame(_,name,parent,template) local obj=object(parent);if name then _G[name]=obj end;if template=="UIPanelScrollFrameTemplate" then obj.ScrollBar=object(obj) end;if template=="OptionsSliderTemplate" then obj.Low=object(obj);obj.High=object(obj) end;return obj end
-function Methods:CreateFontString() local font=object(self);font.fontString=true;return font end
+function Methods:CreateFontString(_,_,template) local font=object(self);font.fontString=true;font.fontTemplate=template;return font end
 function Methods:CreateTexture() return object(self) end
 UIParent = object()
 UIParent:SetSize(1920,1080)
@@ -315,6 +322,7 @@ end
 QuestLoreCharacterDB = nil
 loadModule("QuestAPI.lua", ns)
 loadModule("Polestar.lua", ns)
+loadModule("Justify.lua", ns)
 loadModule("Window.lua", ns)
 loadModule("Tracker.lua", ns)
 loadModule("Options.lua", ns)
@@ -517,7 +525,7 @@ equal(ns.Window.currentID,99,"reopening reads current quest after hidden changes
 ns.SetVisible(false)
 ns.db.position={x=200,y=80}
 local reloaded = {}
-for _,file in ipairs({"Text.lua","Locale.lua","Stories.lua","Stories_Undead.lua","Stories_ForeverTirisfal.lua","Narratives.lua","Origins_Stories.lua","Origins.lua","Model.lua","History.lua","QuestAPI.lua","Polestar.lua","Window.lua","Tracker.lua","Options.lua","Core.lua"}) do
+for _,file in ipairs({"Text.lua","Locale.lua","Stories.lua","Stories_Undead.lua","Stories_ForeverTirisfal.lua","Narratives.lua","Origins_Stories.lua","Origins.lua","Model.lua","History.lua","QuestAPI.lua","Polestar.lua","Justify.lua","Window.lua","Tracker.lua","Options.lua","Core.lua"}) do
     loadModule(file,reloaded)
 end
 local reloadEvents=frames[#frames]
@@ -535,7 +543,7 @@ equal(reloaded.Window.body.fontSize,18,"font size survives a reload")
 QuestLoreCharacterDB=nil
 logged={};tracked=0
 local fresh={}
-for _,file in ipairs({"Text.lua","Locale.lua","Stories.lua","Stories_Undead.lua","Stories_ForeverTirisfal.lua","Narratives.lua","Origins_Stories.lua","Origins.lua","Model.lua","History.lua","QuestAPI.lua","Polestar.lua","Window.lua","Tracker.lua","Options.lua","Core.lua"}) do
+for _,file in ipairs({"Text.lua","Locale.lua","Stories.lua","Stories_Undead.lua","Stories_ForeverTirisfal.lua","Narratives.lua","Origins_Stories.lua","Origins.lua","Model.lua","History.lua","QuestAPI.lua","Polestar.lua","Justify.lua","Window.lua","Tracker.lua","Options.lua","Core.lua"}) do
     loadModule(file,fresh)
 end
 local freshEvents=frames[#frames]
@@ -615,7 +623,7 @@ assert(fresh.Window.minimize:GetWidth()==24 and fresh.Window.minimize:GetHeight(
 assert(fresh.Window.minimize.point[1]=="RIGHT" and fresh.Window.minimize.point[2]==fresh.Window.header and fresh.Window.minimize.point[4]==6)
 local visits=#fresh.db.history
 fresh.Window.minimize.scripts.OnClick()
-assert(fresh.db.minimized and fresh.Window.frame:GetHeight()==fresh.Window.HEADER_HEIGHT)
+assert(fresh.db.minimized and fresh.Window.frame:GetHeight()==fresh.Window:GetHeaderHeight())
 assert(not fresh.Window.scroll:IsVisible() and fresh.Window.footer==nil)
 assert(not fresh.Window.scroll.ScrollBar:IsShown())
 assert(fresh.Window.frame.point[1]=="TOPLEFT" and fresh.Window.frame.point[5]==695,"minimize must preserve top edge")
@@ -645,7 +653,7 @@ assert(fresh.db.size.width==380 and fresh.db.size.height==310,"save on release")
 window.grip.scripts.OnMouseUp()
 assert(not window.resizing and fresh.db.size.width==520 and fresh.db.size.height==440)
 window:SetMinimized(true)
-assert(not window.grip:IsShown() and window.frame:GetHeight()==window.HEADER_HEIGHT)
+assert(not window.grip:IsShown() and window.frame:GetHeight()==window:GetHeaderHeight())
 assert(fresh.db.size.height==440,"collapse cannot overwrite expanded dimensions")
 window:SetMinimized(false)
 assert(window.grip:IsShown() and window.frame:GetHeight()==440)
@@ -661,7 +669,7 @@ window:SetMinimized(true)
 local function loginCharacter(db)
     QuestLoreCharacterDB=db
     local character={}
-    for _,file in ipairs({"Text.lua","Locale.lua","Stories.lua","Stories_Undead.lua","Stories_ForeverTirisfal.lua","Narratives.lua","Origins_Stories.lua","Origins.lua","Model.lua","History.lua","QuestAPI.lua","Polestar.lua","Window.lua","Tracker.lua","Options.lua","Core.lua"}) do
+    for _,file in ipairs({"Text.lua","Locale.lua","Stories.lua","Stories_Undead.lua","Stories_ForeverTirisfal.lua","Narratives.lua","Origins_Stories.lua","Origins.lua","Model.lua","History.lua","QuestAPI.lua","Polestar.lua","Justify.lua","Window.lua","Tracker.lua","Options.lua","Core.lua"}) do
         loadModule(file,character)
     end
     local event=frames[#frames]
@@ -670,7 +678,7 @@ local function loginCharacter(db)
     return character
 end
 local restored=loginCharacter(fresh.db)
-assert(restored.Window.frame:GetWidth()==520 and restored.Window.frame:GetHeight()==restored.Window.HEADER_HEIGHT)
+assert(restored.Window.frame:GetWidth()==520 and restored.Window.frame:GetHeight()==restored.Window:GetHeaderHeight())
 restored.Window:SetMinimized(false)
 assert(restored.Window.frame:GetHeight()==440,"saved expanded height survives reload while minimized")
 local other=loginCharacter(nil)
@@ -678,8 +686,8 @@ assert(other.Window.frame:GetWidth()==380 and other.Window.frame:GetHeight()==31
 assert(fresh.db.size.width==520 and fresh.db.size.height==440)
 UIParent:SetSize(400,300)
 local clamped=loginCharacter({size={width=2000,height=1200}})
-assert(clamped.Window.frame:GetWidth()==380 and clamped.Window.frame:GetHeight()==280,"saved dimensions fit current screen")
-assert(clamped.Window.frame.resizeBounds[1]==320 and clamped.Window.frame.resizeBounds[2]==180)
+assert(clamped.Window.frame:GetWidth()==2000 and clamped.Window.frame:GetHeight()==280,"width has no addon ceiling while saved height fits screen")
+assert(clamped.Window.frame.resizeBounds[1]==320 and clamped.Window.frame.resizeBounds[2]==80)
 UIParent:SetSize(1920,1080)
 print("PASS: corner resize, live text/scroll reflow, per-character dimensions, collapsed reload and screen bounds")
 
@@ -702,7 +710,7 @@ print("PASS: native AddOns category, live font slider/preview, rounding, reset, 
 
 fontRestored.Window:SetMinimized(true)
 fontRestored.Options.slider:SetValue(18)
-assert(fontRestored.db.minimized and fontRestored.Window.frame:GetHeight()==fontRestored.Window.HEADER_HEIGHT,"font option cannot expand minimized window")
+assert(fontRestored.db.minimized and fontRestored.Window.frame:GetHeight()==fontRestored.Window:GetHeaderHeight(),"font option cannot expand minimized window")
 fontRestored.SetVisible(false)
 fontRestored.Options.slider:SetValue(19)
 assert(not fontRestored.Window.frame:IsShown(),"font option cannot reopen hidden window")
@@ -712,13 +720,13 @@ print("PASS: changing text settings preserves minimized and hidden state")
 C_Texture={GetAtlasInfo=function(name)
     return {width=55,height=55,leftTexCoord=0.1,rightTexCoord=0.9,topTexCoord=0.2,bottomTexCoord=0.8}
 end}
-local native=loginCharacter(nil)
+local native=loginCharacter(nil);tick(0.2)
 assert(native.Window.frame.backdrop==nil,"transparent tracker has no backdrop")
-assert(native.Window.headerLabel.text=="Lore","fixed Lore header")
+assert(native.Window.headerLabel.text==native.Window.currentTitle and native.Window.wideLayout,"detached wide header shows the quest title")
 assert(native.Window.body.textColor[1]==1 and native.Window.body.textColor[2]==1 and native.Window.body.textColor[3]==1,"summary uses white tracker text")
 assert(native.Window.title.textColor[1]==1 and native.Window.title.textColor[2]>0.7 and native.Window.title.textColor[3]==0,"summary title uses quest yellow")
 native.Window:SetMinimized(true)
-assert(native.Window.frame:GetHeight()==native.Window.HEADER_HEIGHT and not native.Window.scroll:IsShown(),"minimized tracker keeps only Lore header")
+assert(native.Window.frame:GetHeight()==native.Window:GetHeaderHeight() and not native.Window.scroll:IsShown(),"minimized tracker keeps only Lore header")
 print("PASS: transparent tracker section, fixed Lore header, yellow quest title and white summary")
 
 for _, locale in ipairs({"enUS","enGB","deDE","frFR","ptBR","ruRU","koKR","zhCN"}) do
@@ -1126,3 +1134,5 @@ assert(loadfile(root.."/tests/layout.lua"))()({
     login=loginCharacter, tick=tick, object=object,
     setQuest=function() tracked=13;QuestMapFrame.DetailsFrame:Hide() end,
 })
+
+assert(loadfile(root.."/tests/horizontal.lua"))()({login=loginCharacter,tick=tick,object=object})

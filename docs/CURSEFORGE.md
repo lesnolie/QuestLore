@@ -22,6 +22,7 @@ Select a quest in your quest journal or tracker to read its context in a transpa
 - Automatic game-language detection, plus manual English and Spanish choices.
 - Up to 200 unique saved stories per character, with a separate archive in the addon options.
 - Per-character font size, attachment, window position, dimensions, and minimized state.
+- An automatic wide detached banner with a centered quest heading and justified narrative, useful above action bars or across the top of the screen.
 - Local narrative data: no online AI or translation service during play.
 
 ### Compatibility and installation
@@ -40,7 +41,7 @@ QuestLore is open source under the MIT License. World of Warcraft and its underl
 
 - Avatar: `media/questlore-icon-400.png`, exactly 400×400 PNG.
 - Original generated image: `media/questlore-icon-original.png`.
-- Upload archive: `dist/QuestLore-0.15.6.zip` from the GitHub release.
+- Upload archive: `dist/QuestLore-0.16.0.zip` from the GitHub release.
 - Source: https://github.com/mexiar/QuestLore
 - Issues: https://github.com/mexiar/QuestLore/issues
 - License selection: MIT License.

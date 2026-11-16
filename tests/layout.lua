@@ -55,6 +55,13 @@ return function(env)
         local visible=viewport()
         local bodyAnchor=assert(window.body.points.TOPLEFT)
         local textBottom=-bodyAnchor[5]+window.body:GetStringHeight()
+        if window.wideLayout then
+            textBottom=0
+            for i=1,window.justified.used do
+                local word=window.justified.words[i]
+                textBottom=math.max(textBottom,-word.point[5]+word:GetStringHeight())
+            end
+        end
         assert(window.body.height==0,label..": body has no clipping height")
         assert(window.content:GetHeight()>=textBottom,label..": content includes the last line")
         local actual=math.max(0,window.content:GetHeight()-visible)
@@ -99,7 +106,7 @@ return function(env)
     assert(window.scrollRange>0 and math.abs(scroll:GetVerticalScroll()/window.scrollRange-0.5)<0.001,"font changes preserve reading fraction through deferred native geometry")
     verify("deferred fraction")
     window:SetMinimized(true);env.tick(0.2)
-    assert(window.frame:GetHeight()==window.HEADER_HEIGHT and not scroll:IsVisible() and not scroll.ScrollBar:IsShown(),"minimized Lore exposes no text or scrollbar")
+    assert(window.frame:GetHeight()==window:GetHeaderHeight() and not scroll:IsVisible() and not scroll.ScrollBar:IsShown(),"minimized Lore exposes no text or scrollbar")
     cap=900;host:MarkDirty();env.tick(0.2)
     window:SetFontSize(24);window:SetMinimized(false);env.tick(0.2)
     verify("restore with new font and space")

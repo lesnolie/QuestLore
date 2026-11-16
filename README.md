@@ -18,15 +18,27 @@
 
 ## Interface
 
-The transparent **Lore** section uses a yellow quest title and white narrative text. The quest title and narrative use the same configured font size. Its only header control minimizes or restores the section. There are no page arrows, history counters, Current button, or title tooltip in the live window. Escape leaves Lore open.
+The transparent **Lore** section uses a yellow quest title and white narrative text. In the tracker and portrait layouts, the quest title and narrative use the same configured font size. Its only header control minimizes or restores the section. There are no page arrows, history counters, Current button, or title tooltip in the live window. Escape leaves Lore open.
 
 Lore attaches below the quest list by default when **ForeverCore** exposes its shared tracker API. It follows the tracker width and visibility. You can detach it in the options, then drag the header to move it or the lower-right corner to resize it. Long narratives scroll; the scrollbar disappears when the text fits. Collapsing other tracker sections triggers a deferred reflow so Lore can reclaim the released space. Its desired height is measured at the full text width, independently of the previous scrollbar gutter. Text is measured without stale height constraints so the full narrative remains available instead of ending in an ellipsis. Attachment changes requested during combat wait until combat ends.
 
 Language, font size, attachment preference, detached position and size, visibility, minimized state, and history are saved per character. Existing explicit detachment settings are respected.
 
+## Wide detached layout
+
+Detach Lore in the addon options, then drag the lower-right corner. When the **expanded window is wider than it is tall**, it automatically becomes a compact horizontal banner:
+
+- The quest name replaces **Lore** in the header, centered in the same native header typography and yellow color.
+- The title is not repeated above the narrative.
+- Narrative paragraphs use full justification; the last line of each paragraph remains left aligned.
+- The window can be made shallow (about 80 UI units minimum, with extra room when a long header or large font needs it) and has **no addon-imposed maximum width**. The client's display and frame constraints still apply.
+- Text remains scrollable if it cannot fit. Minimizing preserves the expanded aspect ratio, title, and saved dimensions.
+
+This layout is useful above action bars or across the top of the screen. Making the detached window square or taller restores the ordinary Lore header and separate quest title. Reattaching always uses the tracker layout. Position and dimensions remain per character.
+
 ## Installation
 
-1. Download `QuestLore-0.15.6.zip` from Releases.
+1. Download `QuestLore-0.16.0.zip` from Releases.
 2. Extract the **QuestLore** folder into `_forever_/Interface/AddOns/`.
 3. Check that `Interface/AddOns/QuestLore/QuestLore.toc` exists, without a second nested QuestLore folder.
 4. Enable QuestLore in the game's addon list. Restart the client for a new installation; use `/reload` when updating an existing installation.
@@ -79,7 +91,7 @@ See [integration details and tested limits](docs/POLESTAR.md).
 
 ## Development
 
-The addon uses Lua 5.1 and the game's UI APIs without bundled libraries. Runtime source and the editable narrative tables are in `QuestLore/`. `Narratives.lua` contains the bilingual quest corpus; `Origins_Stories.lua` contains the integrated opening variants. `tests/run.lua` simulates quest APIs, events, history, options, layout, and asynchronous loading. `tests/layout.lua` checks 590 geometry cases across all font sizes (12–24), three tracker widths, three space budgets, both languages, paragraphs, long tokens, minimize/restore, and detached resizing. It independently derives the native viewport from recorded anchors and tests delayed range updates, last-line reachability, reading-position preservation, and idle convergence. It also checks every narrative ID across supported language selections and seven client locales.
+The addon uses Lua 5.1 and the game's UI APIs without bundled libraries. Runtime source and the editable narrative tables are in `QuestLore/`. `Narratives.lua` contains the bilingual quest corpus; `Origins_Stories.lua` contains the integrated opening variants. `tests/run.lua` simulates quest APIs, events, history, options, layout, and asynchronous loading. `tests/layout.lua` checks 590 geometry cases across all font sizes (12–24), three tracker widths, three space budgets, both languages, paragraphs, long tokens, minimize/restore, and detached resizing. `tests/horizontal.lua` adds 312 cases for automatic mode transitions, native header typography, full justification without lost text, shallow/wide geometry, saved dimensions, and pool reuse. It independently derives the native viewport from recorded anchors and tests delayed range updates, last-line reachability, reading-position preservation, and idle convergence. It also checks every narrative ID across supported language selections and seven client locales.
 
 Requirements: **Python 3** and **Lua 5.1**.
 

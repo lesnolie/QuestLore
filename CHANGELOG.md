@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.16.2
+
+- Show the minimize/restore control only while hovering Lore, including its collapsed title bar and attached tracker mode. Reuse existing mouse events without adding polling.
+
 ## 0.16.1
 
 - Show the detached resize icon only while hovering the window, keeping it visible throughout an active resize drag. No hover polling timer is added.

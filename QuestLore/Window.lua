@@ -165,7 +165,7 @@ function Window:Layout()
     end
 end
 
-function Window:UpdateResizeIndicator(inside)
+function Window:UpdateHoverControls(inside)
     if not self.grip then return end
     if inside==nil then
         inside=MouseIsOver and MouseIsOver(self.frame) or false
@@ -175,6 +175,7 @@ function Window:UpdateResizeIndicator(inside)
     -- Keep the transparent hit region active so moving onto the corner also
     -- reveals it; attached/minimized windows still hide the button entirely.
     self.grip:SetAlpha(visible and 1 or 0)
+    self.minimize:SetAlpha(self.hovered and 1 or 0)
 end
 
 function Window:FinishResize()
@@ -187,7 +188,7 @@ function Window:FinishResize()
     end
     self:SavePosition()
     self:Layout()
-    self:UpdateResizeIndicator()
+    self:UpdateHoverControls()
 end
 
 function Window:SetFontSize(value)
@@ -250,7 +251,7 @@ function Window:SetMinimized(value, initial)
         self:UpdateMinimizeButton()
     end
     self:Layout()
-    self:UpdateResizeIndicator()
+    self:UpdateHoverControls()
     if not initial and ns.ready then ns.QueueRefresh() end
 end
 
@@ -278,7 +279,7 @@ function Window:SetAttachedLayout(width, height)
     self.frame:SetSize(width, ns.db.minimized and self.HEADER_HEIGHT or self.expandedHeight)
     self.applyingSize = false
     self.grip:Hide()
-    self:UpdateResizeIndicator(false)
+    self:UpdateHoverControls()
     self:Layout()
     self:QueueLayout()
     self.applyingAttachedLayout = false
@@ -300,7 +301,7 @@ function Window:RestoreDetachedLayout()
     else self:ResetPosition() end
     self.applyingSize = false
     if not ns.db.minimized then self.grip:Show() end
-    self:UpdateResizeIndicator()
+    self:UpdateHoverControls()
     self:Layout()
     self:QueueLayout()
     self.applyingAttachedLayout = false
@@ -447,7 +448,7 @@ function Window:Create()
             frame:ClearAllPoints(); frame:SetPoint("TOPLEFT", UIParent, "BOTTOMLEFT", left, top)
         end
         self.resizing = true
-        self:UpdateResizeIndicator(true)
+        self:UpdateHoverControls(true)
         frame:StartSizing("BOTTOMRIGHT")
     end)
     grip:SetScript("OnMouseUp", function() self:FinishResize() end)
@@ -456,8 +457,8 @@ function Window:Create()
     grip:SetAlpha(0)
     local function watch(region)
         if not region then return end
-        region:HookScript("OnEnter",function() self:UpdateResizeIndicator(true) end)
-        region:HookScript("OnLeave",function() self:UpdateResizeIndicator() end)
+        region:HookScript("OnEnter",function() self:UpdateHoverControls(true) end)
+        region:HookScript("OnLeave",function() self:UpdateHoverControls() end)
     end
     watch(frame);watch(header);watch(scroll);watch(content);watch(self.minimize);watch(grip)
     if scroll.ScrollBar then
@@ -470,8 +471,8 @@ function Window:Create()
         self:Layout()
         self:QueueLayout()
     end)
-    frame:SetScript("OnShow", function() self:UpdateResizeIndicator(); if ns.ready then ns.QueueRefresh() end end)
-    frame:SetScript("OnHide", function() self:FinishResize();self:UpdateResizeIndicator(false) end)
+    frame:SetScript("OnShow", function() self:UpdateHoverControls(); if ns.ready then ns.QueueRefresh() end end)
+    frame:SetScript("OnHide", function() self:FinishResize();self:UpdateHoverControls(false) end)
     self:SetFontSize(ns.db.fontSize)
     self:SetMinimized(ns.db.minimized, true)
 end

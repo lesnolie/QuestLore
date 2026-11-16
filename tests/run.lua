@@ -874,7 +874,7 @@ assert(dock.Options.attachment.checked and dock.Options.attachment.enabled,"opti
 dock.Window.header.scripts.OnEnter(dock.Window.header)
 assert(dock.Window.minimize.alpha==1 and not dock.Window.grip:IsShown(),"attached header reveals only minimize on hover")
 dock.Window.header.scripts.OnLeave(dock.Window.header)
-assert(dock.Window.minimize.alpha==0,"attached minimize hides outside the box")
+assert(dock.Window.minimize.alpha==1,"attached minimize stays visible outside the box")
 bridgeWidth=340;host:MarkDirty();tick(0.2)
 assert(dock.Window.frame:GetWidth()==340 and dock.Window.body:GetWidth()==324,"tracker width changes reflow the narrative")
 dock.Window:SetMinimized(true);tick(0.2)

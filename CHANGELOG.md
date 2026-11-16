@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.16.3
+
+- Keep minimize/restore always visible when attached to the quest tracker. Detached windows retain hover-only controls.
+
 ## 0.16.2
 
 - Show the minimize/restore control only while hovering Lore, including its collapsed title bar and attached tracker mode. Reuse existing mouse events without adding polling.

@@ -175,7 +175,7 @@ function Window:UpdateHoverControls(inside)
     -- Keep the transparent hit region active so moving onto the corner also
     -- reveals it; attached/minimized windows still hide the button entirely.
     self.grip:SetAlpha(visible and 1 or 0)
-    self.minimize:SetAlpha(self.hovered and 1 or 0)
+    self.minimize:SetAlpha((self.attachedLayout or self.hovered) and 1 or 0)
 end
 
 function Window:FinishResize()

@@ -1,4 +1,4 @@
-QuestLore 0.16.2 — El hilo de la misión
+QuestLore 0.16.3 — El hilo de la misión
 WoW: Forever · interfaz 16001 · español neutro / English
 
 Copia esta carpeta en _forever_/Interface/AddOns/QuestLore.
@@ -32,7 +32,8 @@ que necesita. Este ajuste observa cambios de tamaño y no añade otro temporizad
 En modo independiente, arrastra la cabecera para mover la ventana y la esquina inferior derecha
 para cambiar sus dimensiones. El indicador de la esquina aparece al pasar
 el mouse sobre la caja y permanece visible mientras cambias su tamaño. El único botón de la cabecera minimiza o
-restaura y aparece solo al pasar el mouse sobre la caja o la barra minimizada. ESC no cierra la ventana. La rueda desplaza los textos largos.
+restaura. Adjunto al rastreador está siempre visible; separado aparece solo
+al pasar el mouse sobre la caja o la barra minimizada. ESC no cierra la ventana. La rueda desplaza los textos largos.
 
 Diseño horizontal: separa Lore del rastreador y haz la caja más ancha que alta.
 El nombre de la misión pasa a la cabecera, centrado, y el resumen queda
